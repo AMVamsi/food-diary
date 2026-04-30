@@ -46,7 +46,7 @@ else
   echo "  Commit blocked — no AI_USAGE.md entry for slug '$SLUG'."
   echo ""
   echo "  Add this row to AI_USAGE.md before committing:"
-  echo "  | $SLUG | $(date +%Y-%m-%d) | Tool | #issue | file(s) | what generated | how verified | modifications |"
+  echo "  | $SLUG | $(date +%Y-%m-%d) | Tool | #issue | file(s) | What was generated | How verified | Modifications |"
   echo ""
   exit 1
 fi
