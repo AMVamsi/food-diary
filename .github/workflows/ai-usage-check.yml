@@ -20,10 +20,9 @@ jobs:
         run: |
           FAILED=0
 
-          # ── Commit range ───────────────────────────────────────────────
+          # ── Commit range ──────────────────────────────────────────────
           if [ "${{ github.event_name }}" = "push" ]; then
             BEFORE="${{ github.event.before }}"
-            # On first push to a new branch, before is all zeros
             if echo "$BEFORE" | grep -qE "^0+$"; then
               RANGE="HEAD~1..HEAD"
             else
@@ -46,43 +45,50 @@ jobs:
             exit 0
           fi
 
-          # ── Check each commit ──────────────────────────────────────────
+          # ── Check each commit ─────────────────────────────────────────
           while IFS= read -r line; do
             [ -z "$line" ] && continue
 
             HASH=$(echo "$line" | awk '{print $1}')
             MSG=$(echo "$line" | cut -d' ' -f2-)
 
-            # Auto-pass: merge commits (all variants)
-            if echo "$MSG" | grep -qiE "^Merge (pull request|branch|remote|tag)"; then
+            # Auto-pass: all merge commit variants
+            # Covers: PR merges, branch merges, remote merges,
+            #         git internal SHA-based merges (Merge abc123 into def456)
+            if echo "$MSG" | grep -qiE \
+              "^Merge (pull request|branch|remote|tag|[0-9a-f]{7,40} into)"; then
               echo "OK   [$HASH]: merge commit — skipped"
               continue
             fi
 
-            # Auto-pass: GitHub squash merge (PR title, no Merge prefix)
-            # These are identified by the GitHub event context, not message content.
-            # If running on a PR merge push and no slug found, treat as merge.
-            if [ "${{ github.event.commits[0].message }}" = "$MSG" ] && \
-               [ "${{ github.event_name }}" = "push" ] && \
-               [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              echo "OK   [$HASH]: push to main — squash merge assumed, skipped"
-              continue
+            # Auto-pass: squash merge push directly to main
+            if [ "${{ github.event_name }}" = "push" ] && \
+               [ "${{ github.ref }}" = "refs/heads/main" ] && \
+               [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              PARENT_COUNT=$(git cat-file -p "$HASH" | grep -c "^parent " || true)
+              if [ "$PARENT_COUNT" -gt 1 ]; then
+                echo "OK   [$HASH]: merge commit by parent count — skipped"
+                continue
+              fi
             fi
 
             # Auto-pass: Copilot code review suggestion commits
             if echo "$MSG" | grep -qiE "^Apply suggestions? from code review"; then
-              echo "OK   [$HASH]: Copilot review suggestion commit — treated as [log:copilot]"
+              echo "OK   [$HASH]: Copilot review suggestion — skipped"
               continue
             fi
 
-            # Auto-pass: other known GitHub-generated commit messages
-            if echo "$MSG" | grep -qiE "^(Update|Co-authored-by|Revert|Bump version)"; then
+            # Auto-pass: other known GitHub-generated messages
+            if echo "$MSG" | grep -qiE \
+              "^(Co-authored-by|Revert \".*\"|Bump version|chore\(release\))"; then
               echo "OK   [$HASH]: auto-generated commit — skipped"
               continue
             fi
 
-            # ── Normal commits: require [log:slug] ────────────────────
-            SLUG=$(echo "$MSG" | grep -oE '\[log:[a-zA-Z0-9_-]+\]' | head -1 | sed 's/\[log://;s/\]//')
+            # ── Require [log:slug] for all other commits ───────────────
+            SLUG=$(echo "$MSG" | \
+              grep -oE '\[log:[a-zA-Z0-9_-]+\]' | head -1 | \
+              sed 's/\[log://;s/\]//')
 
             if [ -z "$SLUG" ]; then
               echo "FAIL [$HASH]: no [log:slug] token — '$MSG'"
@@ -107,5 +113,4 @@ jobs:
             exit 1
           fi
 
-          echo ""
           echo "All commits passed the AI_USAGE.md check."

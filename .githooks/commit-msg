@@ -8,20 +8,23 @@ fi
 
 COMMIT_MSG=$(cat "$COMMIT_MSG_FILE" 2>/dev/null || echo "")
 
-# Auto-pass merge commits
-if echo "$COMMIT_MSG" | grep -qiE "^Merge (pull request|branch|remote|tag)"; then
+# Auto-pass: all merge commit variants including git internal SHA format
+if echo "$COMMIT_MSG" | grep -qiE \
+  "^Merge (pull request|branch|remote|tag|[0-9a-f]{7,40} into)"; then
   echo "  Merge commit — AI_USAGE.md check skipped."
   exit 0
 fi
 
-# Auto-pass Copilot review suggestion commits
+# Auto-pass: Copilot review suggestion commits
 if echo "$COMMIT_MSG" | grep -qiE "^Apply suggestions? from code review"; then
-  echo "  Copilot review suggestion commit — treated as [log:copilot], check skipped."
+  echo "  Copilot review suggestion — check skipped."
   exit 0
 fi
 
 # Extract [log:slug] token
-SLUG=$(echo "$COMMIT_MSG" | grep -oE '\[log:[a-zA-Z0-9_-]+\]' | head -1 | sed 's/\[log://;s/\]//')
+SLUG=$(echo "$COMMIT_MSG" | \
+  grep -oE '\[log:[a-zA-Z0-9_-]+\]' | head -1 | \
+  sed 's/\[log://;s/\]//')
 
 if [ -z "$SLUG" ]; then
   echo ""
@@ -36,15 +39,14 @@ if [ -z "$SLUG" ]; then
   exit 1
 fi
 
-# Check AI_USAGE.md for a matching row
 if grep -q "| $SLUG " AI_USAGE.md; then
   echo "  AI_USAGE.md check passed for slug '$SLUG'."
 else
   echo ""
   echo "  Commit blocked — no AI_USAGE.md entry for slug '$SLUG'."
   echo ""
-  echo "  Add this row to AI_USAGE.md:"
-  echo "  | $SLUG | $(date +%Y-%m-%d) | Tool | #issue | file(s) | what was generated | how verified | modifications |"
+  echo "  Add this row to AI_USAGE.md before committing:"
+  echo "  | $SLUG | $(date +%Y-%m-%d) | Tool | #issue | file(s) | what generated | how verified | modifications |"
   echo ""
   exit 1
 fi
