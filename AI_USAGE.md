@@ -35,3 +35,4 @@ For manual entries: use slug `manual`, set Tool=manual, leave What/Verified/Modi
 | copilot | 2026-04-30 | GitHub Copilot | — | various | code review suggestions accepted via GitHub UI | reviewed before accepting | adjusted as needed |
 | manual  | 2026-04-30 | manual | — | various | no AI assistance | — | — |
 | coplit  | 2026-04-30 | GitHub Copilot | — | various | standing entry for typo of copilot slug in commit f203e5c | slug typo caught by CI, fixed with this entry | — |
+| copilot | 2026-04-30 | GitHub Copilot | — | various | code review suggestions accepted via GitHub UI | reviewed before accepting | adjusted as needed |
