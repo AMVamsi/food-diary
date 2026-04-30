@@ -1,0 +1,50 @@
+#!/bin/bash
+set -e
+
+# Read the commit message from the prepared file
+COMMIT_MSG_FILE="$1"
+if [ -z "$COMMIT_MSG_FILE" ]; then
+  COMMIT_MSG_FILE=".git/COMMIT_EDITMSG"
+fi
+
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE" 2>/dev/null || echo "")
+
+# Extract [log:slug] token from commit message
+SLUG=$(echo "$COMMIT_MSG" | grep -oE '\[log:[a-zA-Z0-9_-]+\]' | head -1 | sed 's/\[log://;s/\]//')
+
+if [ -z "$SLUG" ]; then
+  echo ""
+  echo "  Commit blocked — no [log:slug] token found in commit message."
+  echo ""
+  echo "  Add a token to your commit message:"
+  echo "    feat: my change (#12) [log:my-slug]"
+  echo ""
+  echo "  For manual-only changes:"
+  echo "    chore: update config [log:manual]"
+  echo ""
+  exit 1
+fi
+
+# Manual commits are always allowed — but must still have a row with slug=manual
+if [ "$SLUG" = "manual" ]; then
+  echo "  Manual commit — no AI entry required."
+  echo "  AI_USAGE.md check passed."
+  exit 0
+fi
+
+# Check that a row with this slug exists in AI_USAGE.md
+if grep -q "| $SLUG " AI_USAGE.md; then
+  echo "  AI_USAGE.md entry found for slug '$SLUG'"
+  echo "  Check passed."
+else
+  echo ""
+  echo "  Commit blocked — no AI_USAGE.md entry for slug '$SLUG'."
+  echo ""
+  echo "  Add this row to AI_USAGE.md before committing:"
+  echo "  | $SLUG | $(date +%Y-%m-%d) | Tool | #issue | file(s) | what was generated | how verified | modifications |"
+  echo ""
+  echo "  For manual changes use:"
+  echo "  | $SLUG | $(date +%Y-%m-%d) | manual | #issue | file(s) | — | — | — |"
+  echo ""
+  exit 1
+fi
