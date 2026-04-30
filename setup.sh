@@ -76,7 +76,7 @@ check_contains "AI_USAGE.md" "^## Entries"
 
 check_file "PRODUCT.md"
 check_file "PROJECT_STATE.md"
-check_file "DEVLOG.md"
+check_file "DEV_LOG.md"
 
 check_file ".github/COPILOT_INSTRUCTIONS.md"
 check_file ".github/workflows/ai-usage-check.yml"
