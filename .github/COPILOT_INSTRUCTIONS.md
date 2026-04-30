@@ -42,3 +42,7 @@ Remind me to add a row:
 | slug | date | GitHub Copilot | #issue | files | what was generated | how verified | modifications |
 Slug must match the [log:slug] token in the commit message.
 For manual changes: Tool = manual, remaining columns = —
+
+## Commit rules
+When suggesting a commit message, always append [log:copilot] to the message.
+Example: `fix: correct kcal calculation (#14) [log:copilot]`

@@ -9,7 +9,13 @@ fi
 
 COMMIT_MSG=$(cat "$COMMIT_MSG_FILE" 2>/dev/null || echo "")
 
-# Extract [log:slug] token from commit message
+# Auto-pass merge commits — they contain no new code
+if echo "$COMMIT_MSG" | grep -qE "^Merge (pull request|branch|remote)"; then
+  echo "  Merge commit detected — AI_USAGE.md check skipped."
+  exit 0
+fi
+
+# Extract [log:slug] token
 SLUG=$(echo "$COMMIT_MSG" | grep -oE '\[log:[a-zA-Z0-9_-]+\]' | head -1 | sed 's/\[log://;s/\]//')
 
 if [ -z "$SLUG" ]; then
@@ -19,26 +25,21 @@ if [ -z "$SLUG" ]; then
   echo "  Add a token to your commit message:"
   echo "    feat: my change (#12) [log:my-slug]"
   echo ""
-  echo "  For manual-only changes:"
-  echo "    chore: update config [log:manual]"
+  echo "  For manual-only changes:   [log:manual]"
+  echo "  For Copilot-assisted:      [log:copilot]"
   echo ""
   exit 1
 fi
 
-# Check that a row with this slug exists in AI_USAGE.md
-# Manual commits must also have a row with slug=manual in AI_USAGE.md
+# Check AI_USAGE.md for a matching row
 if grep -q "| $SLUG " AI_USAGE.md; then
-  echo "  AI_USAGE.md entry found for slug '$SLUG'"
-  echo "  Check passed."
+  echo "  AI_USAGE.md check passed for slug '$SLUG'."
 else
   echo ""
   echo "  Commit blocked — no AI_USAGE.md entry for slug '$SLUG'."
   echo ""
-  echo "  Add this row to AI_USAGE.md before committing:"
+  echo "  Add this row to AI_USAGE.md:"
   echo "  | $SLUG | $(date +%Y-%m-%d) | Tool | #issue | file(s) | what was generated | how verified | modifications |"
-  echo ""
-  echo "  For manual changes use:"
-  echo "  | $SLUG | $(date +%Y-%m-%d) | manual | #issue | file(s) | — | — | — |"
   echo ""
   exit 1
 fi

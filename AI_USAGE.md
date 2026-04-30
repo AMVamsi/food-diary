@@ -19,3 +19,7 @@ For manual entries: use slug `manual`, set Tool=manual, leave What/Verified/Modi
 | setup | 2026-04-30 | Claude | #2 | .githooks/commit-msg, setup.sh, ai-usage-check.yml | ci rules, setup script, github workflows | Read every file, ran pre-commit checks, github workflows documentation | initial workflow setup |
 | manual | 2026-04-30 | manual | #2 | .githooks/commit-msg, .github/workflows/ai-usage-check.yml | removed manual-slug bypass so manual commits also require AI_USAGE.md row | reviewed both files | — |
 | PR_1 | 2026-04-30 | Copilot | PR | .githooks/commit-msg, ai-usage-check.yml, backend/app/main.py, PR CI checks | minor changes, PR reviewed | Manual review and accepted the changes once verified | Automated PR review by copilot |
+| slug | 2026-04-30 | Claude | —  | .githooks/commit-msg, .github/workflows/ai-usage-check.yml | logic to resolve failing ci in copilot PR suggentions and auto PR merge to main  | manually reviewed before updating | adjusted as needed |
+| ai_instruction  | 2026-04-30 | manual          | —  | COPILOT_INSTRUCTIONS.md | commit message include to avoid future ci failure       | —                        | —             |
+| manual  | 2026-04-30 | manual          | —  | various | no AI assistance used        | —                        | —             |
+| copilot | 2026-04-30 | GitHub Copilot  | —  | various | code review and suggestions  | reviewed before accepting | adjusted as needed |
