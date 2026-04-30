@@ -24,3 +24,6 @@ For manual entries: use slug `manual`, set Tool=manual, leave What/Verified/Modi
 | manual  | 2026-04-30 | manual          | —  | various | no AI assistance used        | —                        | —             |
 | copilot | 2026-04-30 | GitHub Copilot  | —  | various | code review and suggestions  | reviewed before accepting | adjusted as needed |
 | docker | 2026-04-30 | manual  | —  | backend/Dockerfile backend/.dockerignore | script to build backend in railway deployment | verified from docker documentation and build was successful locally | initial docker file |
+| copilot | 2026-04-30 | GitHub Copilot | — | various | code review suggestions accepted via GitHub UI | reviewed each suggestion before accepting | adjusted as needed |
+| manual  | 2026-04-30 | manual | — | various | no AI assistance | — | — |
+| depend  | 2026-04-30 | manual | — | backend/requirements.txt, .githooks/commit-msg, .github/workflows/ai-usage-check.yml | build failure dependencies resolved for railway + docker, skipped AI-Usage ci error when triggered by copilot during PR or merged to main | local build successful + documentation verified | packages version updated | 

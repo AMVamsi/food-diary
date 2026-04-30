@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-# Read the commit message from the prepared file
 COMMIT_MSG_FILE="$1"
 if [ -z "$COMMIT_MSG_FILE" ]; then
   COMMIT_MSG_FILE=".git/COMMIT_EDITMSG"
@@ -9,9 +8,15 @@ fi
 
 COMMIT_MSG=$(cat "$COMMIT_MSG_FILE" 2>/dev/null || echo "")
 
-# Auto-pass merge commits — they contain no new code
-if echo "$COMMIT_MSG" | grep -qE "^Merge (pull request|branch|remote)"; then
-  echo "  Merge commit detected — AI_USAGE.md check skipped."
+# Auto-pass merge commits
+if echo "$COMMIT_MSG" | grep -qiE "^Merge (pull request|branch|remote|tag)"; then
+  echo "  Merge commit — AI_USAGE.md check skipped."
+  exit 0
+fi
+
+# Auto-pass Copilot review suggestion commits
+if echo "$COMMIT_MSG" | grep -qiE "^Apply suggestions? from code review"; then
+  echo "  Copilot review suggestion commit — treated as [log:copilot], check skipped."
   exit 0
 fi
 
