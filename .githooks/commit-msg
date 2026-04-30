@@ -10,7 +10,7 @@ COMMIT_MSG=$(cat "$COMMIT_MSG_FILE" 2>/dev/null || echo "")
 
 # Auto-pass: all merge commit variants including git internal SHA format
 if echo "$COMMIT_MSG" | grep -qiE \
-  "^Merge (pull request|branch|remote|tag|[0-9a-f]{7,40} into)"; then
+  "^Merge (pull request|branch|remote(-tracking branch)?|tag|[0-9a-f]{7,40} into)"; then
   echo "  Merge commit — AI_USAGE.md check skipped."
   exit 0
 fi
