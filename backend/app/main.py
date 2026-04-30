@@ -1,8 +1,25 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.routers import auth, profile, diary, logmeal
 
 app = FastAPI(title="Food Diary API")
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Custom exception handler to ensure HTTPException with dict detail returns top-level error/detail fields."""
+    if isinstance(exc.detail, dict):
+        # If detail is already a dict with error/detail keys, return it at top level
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=exc.detail,
+        )
+    # Otherwise, wrap the detail in the standard ErrorResponse format
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": "Request failed", "detail": str(exc.detail)},
+    )
 
 app.add_middleware(
     CORSMiddleware,

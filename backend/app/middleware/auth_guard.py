@@ -3,7 +3,7 @@ from fastapi import Header, HTTPException
 from app.db.supabase import supabase
 
 
-async def get_current_user(authorization: str = Header(None)):
+def get_current_user(authorization: str = Header(None)):
     """Reusable FastAPI Depends() that validates a Bearer token via Supabase Auth."""
     if authorization is None:
         raise HTTPException(
