@@ -32,3 +32,7 @@ For manual entries: use slug `manual`, set Tool=manual, leave What/Verified/Modi
 | expo | 2026-04-30| Claude | [#5](https://github.com/AMVamsi/food-diary/issues/5) | mobile/** | expo skeleton, folder structure, placeholders | manually designed and verified each file & flow + expo go ran without errors establishing connection, resolved lint issues | initial implementation of ui with issue ids as placeholders |
 | client_api | 2026-04-30| Manual | [#5](https://github.com/AMVamsi/food-diary/issues/5) | mobile/** | client api to fastAPI + auth state + diary schema defined | manually designed and verified each file & flow + expo go ran without errors establishing connection | clientAPI + fastAPI + diary schema defined |
 | copilot | 2026-04-30 | GitHub Copilot | — | various | code review suggestions accepted via GitHub UI | reviewed each suggestion before accepting | adjusted as needed |
+| copilot | 2026-04-30 | GitHub Copilot | — | various | code review suggestions accepted via GitHub UI | reviewed before accepting | adjusted as needed |
+| manual  | 2026-04-30 | manual | — | various | no AI assistance | — | — |
+| coplit  | 2026-04-30 | GitHub Copilot | — | various | standing entry for typo of copilot slug in commit f203e5c | slug typo caught by CI, fixed with this entry | — |
+| copilot | 2026-04-30 | GitHub Copilot | — | various | code review suggestions accepted via GitHub UI | reviewed before accepting | adjusted as needed |
