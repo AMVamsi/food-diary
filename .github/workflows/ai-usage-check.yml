@@ -21,10 +21,16 @@ jobs:
         run: |
           FAILED=0
 
-          # Get all commits in this push that aren't already on the base branch
-          COMMITS=$(git log origin/${{ github.ref_name }}..HEAD --format="%H %s" 2>/dev/null || \
-                    git log HEAD~1..HEAD --format="%H %s")
+          # Use the exact commit range from the triggering GitHub event.
+          if [ "${{ github.event_name }}" = "push" ]; then
+            RANGE="${{ github.event.before }}..${{ github.sha }}"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          else
+            RANGE="HEAD~1..HEAD"
+          fi
 
+          COMMITS=$(git log "$RANGE" --format="%H %s" 2>/dev/null)
           if [ -z "$COMMITS" ]; then
             echo "No new commits to check."
             exit 0
