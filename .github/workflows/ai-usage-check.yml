@@ -56,7 +56,7 @@ jobs:
             # Covers: PR merges, branch merges, remote merges,
             #         git internal SHA-based merges (Merge abc123 into def456)
             if echo "$MSG" | grep -qiE \
-              "^Merge (pull request|branch|remote|tag|[0-9a-f]{7,40} into)"; then
+              "^Merge (pull request|branch|remote(-tracking branch)?|tag|[0-9a-f]{7,40} into)"; then
               echo "OK   [$HASH]: merge commit — skipped"
               continue
             fi
