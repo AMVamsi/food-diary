@@ -18,3 +18,4 @@ For manual entries: use slug `manual`, set Tool=manual, leave What/Verified/Modi
 | ai-guardrails | 2026-04-30 | Claude | #2 |  PRODUCT.md, PROJECT_STATE.md | product details for the agent | Read every file, verified across source documents and github issues manually | initial scope |
 | setup | 2026-04-30 | Claude | #2 | .githooks/commit-msg, setup.sh, ai-usage-check.yml | ci rules, setup script, github workflows | Read every file, ran pre-commit checks, github workflows documentation | initial workflow setup |
 | manual | 2026-04-30 | manual | #2 | .githooks/commit-msg, .github/workflows/ai-usage-check.yml | removed manual-slug bypass so manual commits also require AI_USAGE.md row | reviewed both files | — |
+| PR_1 | 2026-04-30 | Copilot | PR | .githooks/commit-msg, ai-usage-check.yml, backend/app/main.py, PR CI checks | minor changes, PR reviewed | Manual review and accepted the changes once verified | Automated PR review by copilot |
