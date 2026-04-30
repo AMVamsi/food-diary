@@ -17,11 +17,11 @@ Day 0 complete — no implementation yet, setup and planning only.
 |---|-------|--------|
 | #1 | Repo and folder scaffold | ✅ done |
 | #2 | AI usage guardrail | ✅ done |
-| #3 | Supabase schema + RLS | ⬜ not started |
-| #4 | FastAPI scaffold + Railway | ⬜ not started |
-| #5 | Expo scaffold + navigation | ⬜ not started |
+| #3 | Supabase schema + RLS | ✅ done |
+| #4 | FastAPI scaffold + Railway | ✅ done |
+| #5 | Expo scaffold + navigation | ✅ done |
 | #6 | GitHub issues logged | ✅ done |
-| #7 | FastAPI auth router | ⬜ not started |
+| #7 | FastAPI auth router | ✅ done |
 | #8 | Login + Signup screens | ⬜ not started |
 | #9 | FastAPI profile router | ⬜ not started |
 | #10 | Profile screen | ⬜ not started |

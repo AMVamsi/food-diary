@@ -12,9 +12,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-auth_router = getattr(auth, "router", None)
-if auth_router is not None:
-    app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 profile_router = getattr(profile, "router", None)
 if profile_router is not None:
