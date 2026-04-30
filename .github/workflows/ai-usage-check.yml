@@ -25,7 +25,13 @@ jobs:
           if [ "${{ github.event_name }}" = "push" ]; then
             RANGE="${{ github.event.before }}..${{ github.sha }}"
           elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+            # On synchronize events, check only newly pushed commits to avoid
+            # re-failing already-reviewed historical commits in the PR.
+            if [ "${{ github.event.action }}" = "synchronize" ] && [ -n "${{ github.event.before }}" ]; then
+              RANGE="${{ github.event.before }}..${{ github.event.pull_request.head.sha }}"
+            else
+              RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+            fi
           else
             RANGE="HEAD~1..HEAD"
           fi
