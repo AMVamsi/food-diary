@@ -27,6 +27,19 @@ if diary_router is not None:
 logmeal_router = getattr(logmeal, "router", None)
 if logmeal_router is not None:
     app.include_router(logmeal_router, prefix="/logmeal", tags=["logmeal"])
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/health/db")
+async def health_db():
+    try:
+        from app.db.supabase import supabase
+
+        result = supabase.table("profiles").select("count").execute()
+        return {"status": "ok", "supabase": "connected"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
