@@ -1,0 +1,71 @@
+# .github/workflows/ai-usage-check.yml
+name: AI usage disclosure check
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-ai-usage:
+    name: Verify AI_USAGE.md entry exists for each commit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check AI_USAGE.md entries for all commits in push
+        run: |
+          FAILED=0
+
+          # Use the exact commit range from the triggering GitHub event.
+          if [ "${{ github.event_name }}" = "push" ]; then
+            RANGE="${{ github.event.before }}..${{ github.sha }}"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            # On synchronize events, check only the latest pushed commit to avoid
+            # re-failing already-reviewed historical commits in the PR.
+            if [ "${{ github.event.action }}" = "synchronize" ]; then
+              RANGE="HEAD~1..HEAD"
+            else
+              RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+            fi
+          else
+            RANGE="HEAD~1..HEAD"
+          fi
+
+          COMMITS=$(git log "$RANGE" --format="%H %s" 2>/dev/null)
+          if [ -z "$COMMITS" ]; then
+            echo "No new commits to check."
+            exit 0
+          fi
+
+          while IFS= read -r line; do
+            HASH=$(echo "$line" | awk '{print $1}')
+            MSG=$(echo "$line" | cut -d' ' -f2-)
+
+            SLUG=$(echo "$MSG" | grep -oE '\[log:[a-zA-Z0-9_-]+\]' | head -1 | sed 's/\[log://;s/\]//')
+
+            if [ -z "$SLUG" ]; then
+              echo "FAIL [$HASH]: no [log:slug] token in commit message: '$MSG'"
+              FAILED=1
+              continue
+            fi
+
+            # Manual commits must also have a row with slug=manual in AI_USAGE.md
+            if grep -q "| $SLUG " AI_USAGE.md; then
+              echo "OK   [$HASH]: found AI_USAGE.md entry for slug '$SLUG'"
+            else
+              echo "FAIL [$HASH]: no AI_USAGE.md entry for slug '$SLUG'"
+              FAILED=1
+            fi
+          done <<< "$COMMITS"
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "One or more commits are missing AI_USAGE.md entries."
+            echo "Add the missing rows and amend or add a fixup commit."
+            exit 1
+          fi
