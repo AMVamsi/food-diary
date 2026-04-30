@@ -5,12 +5,20 @@ from app.db.supabase import supabase
 
 async def get_current_user(authorization: str = Header(None)):
     """Reusable FastAPI Depends() that validates a Bearer token via Supabase Auth."""
-    if authorization is None or not authorization.startswith("Bearer "):
+    if authorization is None:
         raise HTTPException(
             status_code=401,
             detail={"error": "Missing token", "detail": "Authorization header required"},
         )
-    token = authorization.split(" ")[1]
+
+    parts = authorization.split(None, 1)
+    if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1].strip():
+        raise HTTPException(
+            status_code=401,
+            detail={"error": "Missing token", "detail": "Authorization header required"},
+        )
+
+    token = parts[1].strip()
     try:
         response = supabase.auth.get_user(token)
         if response is None or response.user is None:
