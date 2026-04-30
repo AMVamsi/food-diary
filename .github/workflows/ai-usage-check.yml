@@ -48,11 +48,7 @@ jobs:
               continue
             fi
 
-            if [ "$SLUG" = "manual" ]; then
-              echo "OK   [$HASH]: manual commit — no AI entry required"
-              continue
-            fi
-
+            # Manual commits must also have a row with slug=manual in AI_USAGE.md
             if grep -q "| $SLUG " AI_USAGE.md; then
               echo "OK   [$HASH]: found AI_USAGE.md entry for slug '$SLUG'"
             else

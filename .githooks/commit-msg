@@ -25,14 +25,8 @@ if [ -z "$SLUG" ]; then
   exit 1
 fi
 
-# Manual commits are always allowed — but must still have a row with slug=manual
-if [ "$SLUG" = "manual" ]; then
-  echo "  Manual commit — no AI entry required."
-  echo "  AI_USAGE.md check passed."
-  exit 0
-fi
-
 # Check that a row with this slug exists in AI_USAGE.md
+# Manual commits must also have a row with slug=manual in AI_USAGE.md
 if grep -q "| $SLUG " AI_USAGE.md; then
   echo "  AI_USAGE.md entry found for slug '$SLUG'"
   echo "  Check passed."
