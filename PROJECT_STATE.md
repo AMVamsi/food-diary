@@ -51,7 +51,7 @@ Day 0 complete — no implementation yet, setup and planning only.
 - Backend: /profile GET + PUT implemented — Railway redeploy needed to go live
 - Mobile: Login + Signup screens, shared AuthScreenLayout + useAuthForm hook
 - Mobile: Profile screen with live BMI, GET/PUT /profile, PickerField modal component
-- Mobile: BboxOverlay component with coordinate-space scaling (react-native-svg); PhotoLogScreen test harness showing pizza image with two cyan bounding boxes and debug card
+- Mobile: BboxOverlay component with coordinate-space scaling (react-native-svg); PhotoLogScreen test harness showing pizza image with three cyan bounding boxes (tiers 1–3) and debug card
 
 ## Known issues / blockers
 - LogMeal API key not yet confirmed — needed before #12
