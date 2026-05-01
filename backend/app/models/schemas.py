@@ -116,3 +116,16 @@ class ProfileOut(BaseModel):
     bmi: Optional[float] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+
+
+class OtpVerifyRequest(BaseModel):
+    """OTP verification payload — 6-digit code sent to the user's email."""
+
+    email: EmailStr
+    token: str = Field(..., min_length=6, max_length=6)
+
+
+class ResendOtpRequest(BaseModel):
+    """Resend OTP payload — email address to resend the signup code to."""
+
+    email: EmailStr
