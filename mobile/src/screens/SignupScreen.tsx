@@ -40,7 +40,7 @@ export default function SignupScreen({ navigation }: Props) {
                 password,
             })
             if (res.status === 202) {
-                setError('Check your inbox — we sent you a confirmation email. Confirm it then sign in.')
+                navigation.navigate('OtpVerify', { email: email.trim().toLowerCase() })
                 return
             }
             await setAuth(res.data.access_token, res.data.user_id)
@@ -52,6 +52,8 @@ export default function SignupScreen({ navigation }: Props) {
 
             if (status === 409)
                 setError('This email is already registered. Try signing in instead.')
+            else if (status === 429)
+                setError('Too many sign-up attempts. Please wait a few minutes and try again.')
             else if (status === 400)
                 setError('Registration failed. Please check your details.')
             else if (status === 422)

@@ -3,15 +3,25 @@ from fastapi.responses import JSONResponse
 from gotrue.errors import AuthApiError
 
 from app.db.supabase import supabase
-from app.models.schemas import AuthRequest, AuthResponse, RegisterPendingResponse
+from app.models.schemas import (
+    AuthRequest,
+    AuthResponse,
+    OtpVerifyRequest,
+    RegisterPendingResponse,
+    ResendOtpRequest,
+)
 
 router = APIRouter()
 
 
-@router.post("/register", response_model=None, responses={
-    200: {"model": AuthResponse},
-    202: {"model": RegisterPendingResponse},
-})
+@router.post(
+    "/register",
+    response_model=None,
+    responses={
+        200: {"model": AuthResponse},
+        202: {"model": RegisterPendingResponse},
+    },
+)
 def register(body: AuthRequest) -> JSONResponse:
     """Register a new user via Supabase Auth and return a bearer token.
 
@@ -48,6 +58,14 @@ def register(body: AuthRequest) -> JSONResponse:
     except HTTPException:
         raise
     except AuthApiError as e:
+        if e.status == 429:
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "error": "Too many attempts",
+                    "detail": "Email rate limit exceeded. Please wait a few minutes before trying again.",
+                },
+            )
         message = str(e).lower()
         if "already registered" in message or "already exists" in message:
             raise HTTPException(
@@ -77,7 +95,10 @@ def login(body: AuthRequest) -> AuthResponse:
         if user is None or session is None:
             raise HTTPException(
                 status_code=401,
-                detail={"error": "Invalid credentials", "detail": "Authentication failed"},
+                detail={
+                    "error": "Invalid credentials",
+                    "detail": "Authentication failed",
+                },
             )
         return AuthResponse(
             access_token=session.access_token,
@@ -94,4 +115,104 @@ def login(body: AuthRequest) -> AuthResponse:
         raise HTTPException(
             status_code=500,
             detail={"error": "Login failed", "detail": str(e)},
+        )
+
+
+@router.post("/verify-otp", response_model=AuthResponse)
+def verify_otp(body: OtpVerifyRequest) -> AuthResponse:
+    """Verify a 6-digit OTP sent to the user's email during signup.
+
+    Tries both 'signup' and 'email' OTP types because Supabase project
+    configuration determines which type the server uses — both are valid
+    for the email-confirmation OTP flow depending on project settings.
+    """
+    last_error: str = "Code verification failed"
+
+    for otp_type in ("signup", "email"):
+        try:
+            response = supabase.auth.verify_otp(
+                {"email": body.email, "token": body.token, "type": otp_type}
+            )
+            user = response.user
+            session = response.session
+            if user is not None and session is not None:
+                print(
+                    f"[verify-otp] success with type={otp_type} user={user.id}",
+                    flush=True,
+                )
+                return AuthResponse(
+                    access_token=session.access_token,
+                    user_id=str(user.id),
+                )
+            print(
+                f"[verify-otp] null user/session with type={otp_type}",
+                flush=True,
+            )
+        except HTTPException:
+            raise
+        except AuthApiError as e:
+            print(
+                f"[verify-otp] AuthApiError type={otp_type} status={e.status}: {e}",
+                flush=True,
+            )
+            if e.status == 429:
+                raise HTTPException(
+                    status_code=429,
+                    detail={
+                        "error": "Too many attempts",
+                        "detail": "Email rate limit exceeded. Please wait a few minutes.",
+                    },
+                )
+            last_error = str(e)
+        except Exception as e:
+            print(
+                f"[verify-otp] Exception type={otp_type} {type(e).__name__}: {e}",
+                flush=True,
+            )
+            last_error = str(e)
+
+    raise HTTPException(
+        status_code=400,
+        detail={"error": "Invalid or expired code", "detail": last_error},
+    )
+
+
+@router.post("/resend-otp", status_code=204)
+def resend_otp(body: ResendOtpRequest) -> None:
+    """Resend the signup OTP to the user's email address."""
+    try:
+        if not hasattr(supabase.auth, "resend"):
+            # Older gotrue-py versions: re-trigger sign_up which re-sends
+            # the confirmation OTP for unconfirmed accounts.
+            print("[resend-otp] resend() not available, falling back", flush=True)
+            raise HTTPException(
+                status_code=501,
+                detail={
+                    "error": "Resend unavailable",
+                    "detail": "This server version does not support resend. Please restart sign-up.",
+                },
+            )
+        supabase.auth.resend({"type": "signup", "email": body.email})
+        print(f"[resend-otp] sent to {body.email}", flush=True)
+    except HTTPException:
+        raise
+    except AuthApiError as e:
+        print(f"[resend-otp] AuthApiError status={e.status}: {e}", flush=True)
+        if e.status == 429:
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "error": "Too many attempts",
+                    "detail": "Email rate limit exceeded. Please wait a few minutes before requesting another code.",
+                },
+            )
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "Resend failed", "detail": str(e)},
+        )
+    except Exception as e:
+        print(f"[resend-otp] Exception {type(e).__name__}: {e}", flush=True)
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "Resend failed", "detail": str(e)},
         )
