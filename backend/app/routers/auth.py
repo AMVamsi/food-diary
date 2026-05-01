@@ -1,15 +1,23 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 from gotrue.errors import AuthApiError
 
 from app.db.supabase import supabase
-from app.models.schemas import AuthRequest, AuthResponse
+from app.models.schemas import AuthRequest, AuthResponse, RegisterPendingResponse
 
 router = APIRouter()
 
 
-@router.post("/register", response_model=AuthResponse)
-def register(body: AuthRequest) -> AuthResponse:
-    """Register a new user via Supabase Auth and return a bearer token."""
+@router.post("/register", response_model=None, responses={
+    200: {"model": AuthResponse},
+    202: {"model": RegisterPendingResponse},
+})
+def register(body: AuthRequest) -> JSONResponse:
+    """Register a new user via Supabase Auth and return a bearer token.
+
+    Returns 202 when Supabase email confirmation is enabled — user is created
+    but no session is issued until the email link is clicked.
+    """
     try:
         response = supabase.auth.sign_up(
             {"email": body.email, "password": body.password}
@@ -17,7 +25,6 @@ def register(body: AuthRequest) -> AuthResponse:
         user = response.user
         session = response.session
 
-        # Handle case where user is created but no session (email confirmation enabled)
         if user is None:
             raise HTTPException(
                 status_code=400,
@@ -25,15 +32,18 @@ def register(body: AuthRequest) -> AuthResponse:
             )
 
         if session is None:
-            # User created but requires email confirmation
-            raise HTTPException(
+            # Supabase email confirmation is enabled — not an error, just pending
+            return JSONResponse(
                 status_code=202,
-                detail={"error": "Email confirmation required", "detail": "Please check your email to confirm your account before logging in"},
+                content=RegisterPendingResponse().model_dump(),
             )
 
-        return AuthResponse(
-            access_token=session.access_token,
-            user_id=str(user.id),
+        return JSONResponse(
+            status_code=200,
+            content=AuthResponse(
+                access_token=session.access_token,
+                user_id=str(user.id),
+            ).model_dump(),
         )
     except HTTPException:
         raise

@@ -16,6 +16,13 @@ class AuthResponse(BaseModel):
     user_id: str
 
 
+class RegisterPendingResponse(BaseModel):
+    """Returned when Supabase requires email confirmation before a session is issued."""
+
+    message: str = "Email confirmation required"
+    detail: str = "Please check your email to confirm your account before signing in."
+
+
 class ErrorResponse(BaseModel):
     """Standard error shape returned by all failure responses across the API."""
 
