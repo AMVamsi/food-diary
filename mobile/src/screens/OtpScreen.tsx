@@ -38,24 +38,35 @@ export default function OtpScreen({ navigation, route }: Props) {
 
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+    const clearCooldownInterval = () => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+            intervalRef.current = null
+        }
+    }
+
     useEffect(() => {
         return () => {
-            if (intervalRef.current) clearInterval(intervalRef.current)
+            clearCooldownInterval()
         }
     }, [])
 
     const startCooldown = () => {
+        clearCooldownInterval()
         setCooldown(RESEND_COOLDOWN)
-        intervalRef.current = setInterval(() => {
+        const nextInterval = setInterval(() => {
             setCooldown((prev) => {
                 if (prev <= 1) {
-                    clearInterval(intervalRef.current!)
-                    intervalRef.current = null
+                    clearInterval(nextInterval)
+                    if (intervalRef.current === nextInterval) {
+                        intervalRef.current = null
+                    }
                     return 0
                 }
                 return prev - 1
             })
         }, 1000)
+        intervalRef.current = nextInterval
     }
 
     const handleVerify = async () => {
