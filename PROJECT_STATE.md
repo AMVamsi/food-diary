@@ -22,7 +22,7 @@ Day 0 complete — no implementation yet, setup and planning only.
 | #5 | Expo scaffold + navigation | ✅ done |
 | #6 | GitHub issues logged | ✅ done |
 | #7 | FastAPI auth router | ✅ done |
-| #8 | Login + Signup screens | ⬜ not started |
+| #8 | Login + Signup screens | ✅ done |
 | #9 | FastAPI profile router | ⬜ not started |
 | #10 | Profile screen | ⬜ not started |
 | #11 | SPIKE: bbox overlay | ⬜ not started |
