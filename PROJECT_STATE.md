@@ -7,7 +7,7 @@ Reference it at the start of every Copilot Chat session.
 ---
 
 ## Current status
-Day 0 complete — no implementation yet, setup and planning only.
+#12 done — LogMeal proxy router implemented; Railway redeploy needed to activate /logmeal endpoints.
 
 ---
 
@@ -26,7 +26,7 @@ Day 0 complete — no implementation yet, setup and planning only.
 | #9 | FastAPI profile router | ✅ done — Railway redeploy required |
 | #10 | Profile screen | ✅ done |
 | #11 | SPIKE: bbox overlay | ✅ done |
-| #12 | FastAPI LogMeal proxy | ⬜ not started |
+| #12 | FastAPI LogMeal proxy | ✅ done — Railway redeploy required |
 | #13 | Photo log screen | ⬜ not started |
 | #14 | Dish confirmation + serving editor | ⬜ not started |
 | #15 | Ingredient catalogue cache | ⬜ not started |
@@ -52,10 +52,11 @@ Day 0 complete — no implementation yet, setup and planning only.
 - Mobile: Login + Signup screens, shared AuthScreenLayout + useAuthForm hook
 - Mobile: Profile screen with live BMI, GET/PUT /profile, PickerField modal component
 - Mobile: BboxOverlay component with coordinate-space scaling (react-native-svg); PhotoLogScreen test harness showing pizza image with three cyan bounding boxes (tiers 1–3) and debug card
+- Backend: /logmeal/segment, /logmeal/confirm, /logmeal/nutrition implemented — Railway redeploy required
 
 ## Known issues / blockers
-- LogMeal API key not yet confirmed — needed before #12
 - #9 profile router needs Railway redeploy to activate
+- #12 logmeal router needs Railway redeploy to activate (LOGMEAL_API_KEY must be set in Railway env vars)
 
 ## Environment
 - Backend deployed at: https://food-diary-production-cd15.up.railway.app
