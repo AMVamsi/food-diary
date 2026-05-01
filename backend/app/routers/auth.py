@@ -182,9 +182,9 @@ def resend_otp(body: ResendOtpRequest) -> None:
     """Resend the signup OTP to the user's email address."""
     try:
         if not hasattr(supabase.auth, "resend"):
-            # Older gotrue-py versions: re-trigger sign_up which re-sends
-            # the confirmation OTP for unconfirmed accounts.
-            print("[resend-otp] resend() not available, falling back", flush=True)
+            # Older gotrue-py versions do not expose resend(); this endpoint
+            # does not attempt a fallback and returns 501 instead.
+            print("[resend-otp] resend() not available; returning 501", flush=True)
             raise HTTPException(
                 status_code=501,
                 detail={
