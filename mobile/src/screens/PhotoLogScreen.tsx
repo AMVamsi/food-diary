@@ -38,11 +38,11 @@ export default function PhotoLogScreen() {
   const { width } = useWindowDimensions()
   const insets = useSafeAreaInsets()
 
-  // Display the image at full width with a fixed sensible height
-  // The BboxOverlay will scale bbox coordinates from processedImageSize
-  // to these display dimensions regardless of the actual image aspect ratio
+  // Display the image at full width while preserving the processed image aspect ratio
+  // so the overlay coordinates and rendered image share the same display geometry.
   const displayWidth = width - spacing.xxl * 2
-  const displayHeight = displayWidth  // square display — works for most food photos
+  const displayHeight =
+    displayWidth * (testProcessedImageSize.height / testProcessedImageSize.width)
 
   return (
     <LinearGradient
