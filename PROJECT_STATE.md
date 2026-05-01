@@ -24,7 +24,7 @@ Day 0 complete — no implementation yet, setup and planning only.
 | #7 | FastAPI auth router | ✅ done |
 | #8 | Login + Signup screens | ✅ done |
 | #9 | FastAPI profile router | ✅ done — Railway redeploy required |
-| #10 | Profile screen | ⬜ not started |
+| #10 | Profile screen | ✅ done |
 | #11 | SPIKE: bbox overlay | ⬜ not started |
 | #12 | FastAPI LogMeal proxy | ⬜ not started |
 | #13 | Photo log screen | ⬜ not started |
@@ -50,6 +50,7 @@ Day 0 complete — no implementation yet, setup and planning only.
 - Backend: /auth/register, /auth/login deployed on Railway
 - Backend: /profile GET + PUT implemented — Railway redeploy needed to go live
 - Mobile: Login + Signup screens, shared AuthScreenLayout + useAuthForm hook
+- Mobile: Profile screen with live BMI, GET/PUT /profile, PickerField modal component
 
 ## Known issues / blockers
 - LogMeal API key not yet confirmed — needed before #12
