@@ -56,4 +56,13 @@ async def upsert_profile(
         )
 
     updated = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
+    if not updated.data:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Profile fetch failed",
+                "detail": "Profile was saved but could not be retrieved.",
+            },
+        )
+
     return ProfileOut(**updated.data[0])
