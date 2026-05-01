@@ -23,7 +23,7 @@ Day 0 complete — no implementation yet, setup and planning only.
 | #6 | GitHub issues logged | ✅ done |
 | #7 | FastAPI auth router | ✅ done |
 | #8 | Login + Signup screens | ✅ done |
-| #9 | FastAPI profile router | ⬜ not started |
+| #9 | FastAPI profile router | ✅ done — Railway redeploy required |
 | #10 | Profile screen | ⬜ not started |
 | #11 | SPIKE: bbox overlay | ⬜ not started |
 | #12 | FastAPI LogMeal proxy | ⬜ not started |
@@ -47,13 +47,15 @@ Day 0 complete — no implementation yet, setup and planning only.
 - Repo structure in place
 - Pre-commit hook and GitHub Actions AI guardrail active
 - GitHub issues #1–#25 created with labels
-- No backend code written
-- No mobile code written
+- Backend: /auth/register, /auth/login deployed on Railway
+- Backend: /profile GET + PUT implemented — Railway redeploy needed to go live
+- Mobile: Login + Signup screens, shared AuthScreenLayout + useAuthForm hook
 
 ## Known issues / blockers
 - LogMeal API key not yet confirmed — needed before #12
+- #9 profile router needs Railway redeploy to activate
 
 ## Environment
-- Backend deployed at: not yet deployed
-- Supabase project URL: not yet created
+- Backend deployed at: https://food-diary-production-cd15.up.railway.app
+- Supabase project URL: configured (see backend/.env)
 - APK: not yet built
