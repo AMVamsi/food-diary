@@ -51,7 +51,7 @@ export default function PhotoLogScreen() {
       end={{ x: 1, y: 1 }}
       style={styles.container}
     >
-      <View style={[styles.content, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.content, { paddingTop: insets.top + spacing.lg }]}>
         <Text style={styles.title}>Bbox Spike — issue #11</Text>
         <Text style={styles.subtitle}>
           Verify boxes align with food regions
