@@ -30,7 +30,7 @@ const labelBg = 'rgba(6, 182, 212, 0.85)'   // semi-transparent cyan — SVG nee
 const labelText = '#0c1426'                   // dark text on cyan background — SVG text fill
 
 interface Region {
-  contained_bbox: [number, number, number, number]  // [x, y, w, h]
+  contained_bbox: { x: number; y: number; w: number; h: number }
   recognition_results: Array<{
     name: string
     prob: number
@@ -75,10 +75,13 @@ export default function BboxOverlay({
           style={StyleSheet.absoluteFill}
         >
           {regions.map((region, index) => {
+            const bbox = region.contained_bbox
+            if (!bbox || typeof bbox !== 'object') return null
+
             const scaleX = displayWidth / processedImageSize.width
             const scaleY = displayHeight / processedImageSize.height
 
-            const [bx, by, bw, bh] = region.contained_bbox
+            const { x: bx, y: by, w: bw, h: bh } = bbox
 
             const screenX = bx * scaleX
             const screenY = by * scaleY
