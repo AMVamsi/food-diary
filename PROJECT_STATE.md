@@ -7,7 +7,9 @@ Reference it at the start of every Copilot Chat session.
 ---
 
 ## Current status
-#13 done — PhotoLogScreen implemented; spike harness removed. Railway redeploy still needed to activate /logmeal endpoints before end-to-end photo logging works on device.
+#15 done — GET /logmeal/ingredients + POST /logmeal/compute_nutrients added to logmeal router; Supabase 24h cache in place.
+#16 done — ManualLogScreen fully implemented; catalogue loading, search, basket, kcal calculation, save to diary.
+Railway redeploy required to activate new /logmeal endpoints and POST /diary.
 
 ---
 
@@ -29,8 +31,8 @@ Reference it at the start of every Copilot Chat session.
 | #12 | FastAPI LogMeal proxy | ✅ done — Railway redeploy required |
 | #13 | Photo log screen | ✅ done |
 | #14 | Dish confirmation + serving editor | ✅ done |
-| #15 | Ingredient catalogue cache | ⬜ not started |
-| #16 | Manual log screen | ⬜ not started |
+| #15 | Ingredient catalogue cache | ✅ done — Railway redeploy required |
+| #16 | Manual log screen | ✅ done |
 | #17 | FastAPI diary router | ⬜ not started |
 | #18 | Diary screen | ⬜ not started |
 | #19 | API error handling | ⬜ not started |
@@ -54,6 +56,8 @@ Reference it at the start of every Copilot Chat session.
 - Mobile: BboxOverlay component with coordinate-space scaling (react-native-svg)
 - Mobile: PhotoLogScreen — camera + gallery flows with permissions, multipart upload to /logmeal/segment, BboxOverlay wired to real API response, region cards with top-5 candidates, error state with status-code mapping, empty-segmentation path, #14 confirm placeholder
 - Backend: /logmeal/segment, /logmeal/confirm, /logmeal/nutrition implemented — Railway redeploy required
+- Backend: /logmeal/ingredients (with Supabase 24h cache), /logmeal/compute_nutrients implemented — Railway redeploy required
+- Mobile: ManualLogScreen — catalogue load/cache, search, basket with gram editing, kcal calculation, save to diary
 
 ## Known issues / blockers
 - #9 profile router needs Railway redeploy to activate
