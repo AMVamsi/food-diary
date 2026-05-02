@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
     ActivityIndicator,
-    FlatList,
     KeyboardAvoidingView,
-    ListRenderItemInfo,
     Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -65,7 +64,6 @@ function extractKcal(data: ComputeNutrientsResponse): number {
 function mapApiError(err: unknown, fallback: string): string {
     if (err && typeof err === 'object' && 'response' in err) {
         const res = (err as { response?: { status?: number; data?: { detail?: string } } }).response
-        // 404 means the endpoint is not deployed yet — show the fallback, not "Not Found"
         if (res?.status === 404) return fallback
         const detail = res?.data?.detail
         if (typeof detail === 'string') return detail
@@ -73,7 +71,49 @@ function mapApiError(err: unknown, fallback: string): string {
     return fallback
 }
 
+// ─── BasketItemRow ────────────────────────────────────────────────────────────
+// Defined at module level so React never unmounts it on parent re-renders.
+// Keeping it here (not inside ManualLogScreen) is what lets TextInput hold
+// focus when the user types — a closure inside the component would get a new
+// reference every render and FlatList / ScrollView would remount it.
+
+interface BasketItemRowProps {
+    item: BasketItem
+    onUpdateGrams: (id: number, value: string) => void
+    onRemove: (id: number) => void
+}
+
+function BasketItemRow({ item, onUpdateGrams, onRemove }: BasketItemRowProps) {
+    return (
+        <View style={styles.basketItem}>
+            <Text style={styles.basketName} numberOfLines={2}>
+                {item.ingredient.name}
+            </Text>
+            <View style={styles.basketRow}>
+                <View style={styles.gramInputWrapper}>
+                    <Input
+                        label="Grams"
+                        value={item.grams}
+                        onChangeText={v => onUpdateGrams(item.ingredient.id, v)}
+                        keyboardType="decimal-pad"
+                        autoCapitalize="none"
+                    />
+                </View>
+                <TouchableOpacity
+                    style={styles.removeBtn}
+                    onPress={() => onRemove(item.ingredient.id)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                    <Text style={styles.removeBtnText}>✕</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    )
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
+
+const RESULTS_LIMIT = 50
 
 export default function ManualLogScreen() {
     const insets = useSafeAreaInsets()
@@ -122,7 +162,7 @@ export default function ManualLogScreen() {
         }
         loadCatalogue()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []) // only on mount — storeIngredients excluded intentionally
+    }, []) // mount-only — storeIngredients intentionally excluded
 
     // ── Filtering ─────────────────────────────────────────────────────────────
 
@@ -131,6 +171,11 @@ export default function ManualLogScreen() {
         const q = searchQuery.toLowerCase()
         return catalogue.filter(item => item.name.toLowerCase().includes(q))
     }, [catalogue, searchQuery])
+
+    const displayedIngredients = useMemo(
+        () => filteredIngredients.slice(0, RESULTS_LIMIT),
+        [filteredIngredients],
+    )
 
     const basketIds = useMemo<Set<number>>(
         () => new Set(basket.map(b => b.ingredient.id)),
@@ -218,102 +263,11 @@ export default function ManualLogScreen() {
         }
     }, [basket, calculatedKcal, navigation])
 
-    // ── Cancel / clear ────────────────────────────────────────────────────────
+    // ── Search clear — only clears the search field, basket is untouched ──────
 
-    const handleCancel = useCallback(() => {
-        setBasket([])
-        setSearchQuery('')
-        setCalculatedKcal(null)
-        setCalcError(null)
-        setSaveError(null)
-    }, [])
+    const clearSearch = useCallback(() => setSearchQuery(''), [])
 
-    // ── Render helpers ────────────────────────────────────────────────────────
-
-    const renderIngredient = useCallback(
-        ({ item }: ListRenderItemInfo<CatalogueItem>) => {
-            const inBasket = basketIds.has(item.id)
-            return (
-                <TouchableOpacity
-                    style={[
-                        styles.ingredientRow,
-                        inBasket ? styles.ingredientRowSelected : null,
-                    ]}
-                    onPress={() => addToBasket(item)}
-                    activeOpacity={0.7}
-                >
-                    <Text
-                        style={[
-                            styles.ingredientName,
-                            inBasket ? styles.ingredientNameSelected : null,
-                        ]}
-                        numberOfLines={2}
-                    >
-                        {item.name}
-                    </Text>
-                    {inBasket ? <Text style={styles.checkMark}>✓</Text> : null}
-                </TouchableOpacity>
-            )
-        },
-        [basketIds, addToBasket],
-    )
-
-    const renderBasketItem = useCallback(
-        (item: BasketItem) => (
-            <View key={item.ingredient.id} style={styles.basketItem}>
-                <Text style={styles.basketName} numberOfLines={2}>
-                    {item.ingredient.name}
-                </Text>
-                <View style={styles.basketRow}>
-                    <View style={styles.gramInputWrapper}>
-                        <Input
-                            label="Grams"
-                            value={item.grams}
-                            onChangeText={v => updateGrams(item.ingredient.id, v)}
-                            keyboardType="decimal-pad"
-                            autoCapitalize="none"
-                        />
-                    </View>
-                    <TouchableOpacity
-                        style={styles.removeBtn}
-                        onPress={() => removeFromBasket(item.ingredient.id)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                        <Text style={styles.removeBtnText}>✕</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        ),
-        [updateGrams, removeFromBasket],
-    )
-
-    const renderListFooter = useCallback(
-        () => (
-            <View style={styles.basketSection}>
-                <Text style={styles.sectionTitle}>Basket</Text>
-                {basket.length === 0 ? (
-                    <Text style={styles.emptyBasket}>
-                        Search and tap ingredients to add them here
-                    </Text>
-                ) : (
-                    basket.map(renderBasketItem)
-                )}
-                {calculatedKcal !== null ? (
-                    <View style={styles.kcalCard}>
-                        <Text style={styles.kcalLabel}>Total Energy</Text>
-                        <Text style={styles.kcalValue}>
-                            {Math.round(calculatedKcal)} kcal
-                        </Text>
-                    </View>
-                ) : null}
-                <ErrorMessage message={calcError} />
-                <ErrorMessage message={saveError} />
-            </View>
-        ),
-        [basket, calculatedKcal, calcError, saveError, renderBasketItem],
-    )
-
-    // ── Loading / error states ────────────────────────────────────────────────
+    // ── Loading / error screens ───────────────────────────────────────────────
 
     if (isLoading) {
         return (
@@ -366,44 +320,105 @@ export default function ManualLogScreen() {
             >
                 <View style={[styles.fill, { paddingTop: insets.top }]}>
 
-                    {/* Search bar — pinned above the list */}
+                    {/* ── Search bar — pinned, not inside the scroll ─────── */}
                     <View style={styles.searchBar}>
-                        <View style={styles.searchInputWrapper}>
-                            <Input
-                                label="Search ingredients"
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
-                                placeholder="e.g. chicken, rice, banana"
-                                autoCapitalize="none"
-                            />
-                        </View>
-                        {basket.length > 0 ? (
-                            <TouchableOpacity
-                                style={styles.clearBtn}
-                                onPress={handleCancel}
-                            >
-                                <Text style={styles.clearBtnText}>Clear</Text>
-                            </TouchableOpacity>
-                        ) : null}
+                        <Input
+                            label="Search ingredients"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            placeholder="e.g. chicken, rice, banana"
+                            autoCapitalize="none"
+                            rightIcon={
+                                searchQuery.length > 0 ? (
+                                    <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                        <Text style={styles.clearSearchIcon}>✕</Text>
+                                    </TouchableOpacity>
+                                ) : null
+                            }
+                        />
                     </View>
 
-                    {/* Ingredient results + basket */}
-                    <FlatList
-                        data={filteredIngredients}
-                        keyExtractor={item => String(item.id)}
-                        renderItem={renderIngredient}
-                        ListEmptyComponent={
-                            searchQuery.trim().length > 0 ? (
-                                <Text style={styles.noResults}>No ingredients found</Text>
-                            ) : null
-                        }
-                        ListFooterComponent={renderListFooter}
-                        keyboardShouldPersistTaps="handled"
+                    {/* ── Scrollable content — results + basket ─────────── */}
+                    <ScrollView
                         style={styles.fill}
-                        contentContainerStyle={styles.listContent}
-                    />
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode="on-drag"
+                    >
+                        {/* Search results */}
+                        {displayedIngredients.map(item => {
+                            const inBasket = basketIds.has(item.id)
+                            return (
+                                <TouchableOpacity
+                                    key={item.id}
+                                    style={[
+                                        styles.ingredientRow,
+                                        inBasket ? styles.ingredientRowSelected : null,
+                                    ]}
+                                    onPress={() => addToBasket(item)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.ingredientName,
+                                            inBasket ? styles.ingredientNameSelected : null,
+                                        ]}
+                                        numberOfLines={2}
+                                    >
+                                        {item.name}
+                                    </Text>
+                                    {inBasket ? (
+                                        <Text style={styles.checkMark}>✓</Text>
+                                    ) : null}
+                                </TouchableOpacity>
+                            )
+                        })}
 
-                    {/* Fixed footer — Calculate + Save */}
+                        {/* "Refine search" hint when results are capped */}
+                        {filteredIngredients.length > RESULTS_LIMIT ? (
+                            <Text style={styles.refineHint}>
+                                {filteredIngredients.length - RESULTS_LIMIT} more — refine your search
+                            </Text>
+                        ) : null}
+
+                        {/* No results message */}
+                        {searchQuery.trim().length > 0 && displayedIngredients.length === 0 ? (
+                            <Text style={styles.noResults}>No ingredients found</Text>
+                        ) : null}
+
+                        {/* ── Basket ─────────────────────────────────────── */}
+                        <View style={styles.basketSection}>
+                            <Text style={styles.sectionTitle}>Basket</Text>
+                            {basket.length === 0 ? (
+                                <Text style={styles.emptyBasket}>
+                                    Search and tap ingredients to add them here
+                                </Text>
+                            ) : (
+                                basket.map(item => (
+                                    <BasketItemRow
+                                        key={item.ingredient.id}
+                                        item={item}
+                                        onUpdateGrams={updateGrams}
+                                        onRemove={removeFromBasket}
+                                    />
+                                ))
+                            )}
+
+                            {calculatedKcal !== null ? (
+                                <View style={styles.kcalCard}>
+                                    <Text style={styles.kcalLabel}>Total Energy</Text>
+                                    <Text style={styles.kcalValue}>
+                                        {Math.round(calculatedKcal)} kcal
+                                    </Text>
+                                </View>
+                            ) : null}
+
+                            <ErrorMessage message={calcError} />
+                            <ErrorMessage message={saveError} />
+                        </View>
+                    </ScrollView>
+
+                    {/* ── Fixed footer ──────────────────────────────────── */}
                     <View
                         style={[
                             styles.footer,
@@ -461,29 +476,23 @@ const styles = StyleSheet.create({
 
     // Search bar
     searchBar: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.md,
         paddingBottom: spacing.xs,
-        gap: spacing.sm,
     },
-    searchInputWrapper: {
-        flex: 1,
-    },
-    clearBtn: {
-        paddingBottom: spacing.md,
-    },
-    clearBtnText: {
-        ...typography.link,
-        color: colors.gradientMid,
+    clearSearchIcon: {
+        ...typography.body,
+        color: colors.textSecondary,
+        fontSize: 13,
     },
 
-    // Results list
-    listContent: {
+    // Scrollable area
+    scrollContent: {
         paddingHorizontal: spacing.lg,
         paddingBottom: spacing.xl,
     },
+
+    // Ingredient result rows
     ingredientRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -512,6 +521,12 @@ const styles = StyleSheet.create({
         color: colors.gradientMid,
         marginLeft: spacing.sm,
     },
+    refineHint: {
+        ...typography.subtitle,
+        color: colors.textSecondary,
+        textAlign: 'center',
+        paddingVertical: spacing.sm,
+    },
     noResults: {
         ...typography.body,
         color: colors.textSecondary,
@@ -519,7 +534,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xl,
     },
 
-    // Basket
+    // Basket section
     basketSection: {
         marginTop: spacing.lg,
         paddingTop: spacing.md,
@@ -537,6 +552,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         paddingVertical: spacing.xl,
     },
+
+    // Basket item — used by BasketItemRow (module-level)
     basketItem: {
         backgroundColor: colors.surfaceStrong,
         borderRadius: 12,
