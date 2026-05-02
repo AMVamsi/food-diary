@@ -7,7 +7,7 @@ Reference it at the start of every Copilot Chat session.
 ---
 
 ## Current status
-#12 done — LogMeal proxy router implemented; Railway redeploy needed to activate /logmeal endpoints.
+#13 done — PhotoLogScreen implemented; spike harness removed. Railway redeploy still needed to activate /logmeal endpoints before end-to-end photo logging works on device.
 
 ---
 
@@ -27,7 +27,7 @@ Reference it at the start of every Copilot Chat session.
 | #10 | Profile screen | ✅ done |
 | #11 | SPIKE: bbox overlay | ✅ done |
 | #12 | FastAPI LogMeal proxy | ✅ done — Railway redeploy required |
-| #13 | Photo log screen | ⬜ not started |
+| #13 | Photo log screen | ✅ done |
 | #14 | Dish confirmation + serving editor | ⬜ not started |
 | #15 | Ingredient catalogue cache | ⬜ not started |
 | #16 | Manual log screen | ⬜ not started |
@@ -51,7 +51,8 @@ Reference it at the start of every Copilot Chat session.
 - Backend: /profile GET + PUT implemented — Railway redeploy needed to go live
 - Mobile: Login + Signup screens, shared AuthScreenLayout + useAuthForm hook
 - Mobile: Profile screen with live BMI, GET/PUT /profile, PickerField modal component
-- Mobile: BboxOverlay component with coordinate-space scaling (react-native-svg); PhotoLogScreen test harness showing pizza image with three cyan bounding boxes (tiers 1–3) and debug card
+- Mobile: BboxOverlay component with coordinate-space scaling (react-native-svg)
+- Mobile: PhotoLogScreen — camera + gallery flows with permissions, multipart upload to /logmeal/segment, BboxOverlay wired to real API response, region cards with top-5 candidates, error state with status-code mapping, empty-segmentation path, #14 confirm placeholder
 - Backend: /logmeal/segment, /logmeal/confirm, /logmeal/nutrition implemented — Railway redeploy required
 
 ## Known issues / blockers

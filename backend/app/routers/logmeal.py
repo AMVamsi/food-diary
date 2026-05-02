@@ -45,6 +45,17 @@ async def segment_image(
             detail={"error": "Empty file", "detail": "The uploaded file is empty"},
         )
 
+    # Normalise non-standard MIME types before forwarding to LogMeal.
+    # React Native derives 'image/jpg' from .jpg extensions, which is not a
+    # registered IANA type — LogMeal rejects it with a 400.
+    content_type = file.content_type or "image/jpeg"
+    if content_type == "image/jpg":
+        content_type = "image/jpeg"
+
+    print(
+        f"[segment DEBUG] filename={file.filename!r} content_type_raw={file.content_type!r} content_type_used={content_type!r} size={len(file_content)}"
+    )
+
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
@@ -54,7 +65,7 @@ async def segment_image(
                     "image": (
                         file.filename or "image.jpg",
                         file_content,
-                        file.content_type or "image/jpeg",
+                        content_type,
                     )
                 },
             )
@@ -77,7 +88,22 @@ async def segment_image(
                 },
             )
 
+        if response.status_code == 400:
+            # LogMeal 400 = bad image (too large, unsupported format, corrupt).
+            # Surface as 422 so the client shows "photo could not be processed".
+            print(f"[segment DEBUG] LogMeal 400 body={response.text[:500]!r}")
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "error": "Invalid image",
+                    "detail": f"LogMeal rejected the image: {response.text[:200]}",
+                },
+            )
+
         if not response.is_success:
+            print(
+                f"[segment DEBUG] LogMeal status={response.status_code} body={response.text[:500]!r}"
+            )
             raise HTTPException(
                 status_code=502,
                 detail={
