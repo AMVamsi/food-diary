@@ -1,7 +1,10 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 import httpx
 import os
+from app.db.supabase import supabase
 from app.middleware.auth_guard import get_current_user
 from app.models.schemas import ErrorResponse
 
@@ -274,3 +277,214 @@ async def get_nutritional_info(
                 "detail": str(exc),
             },
         )
+
+
+@router.get("/ingredients")
+async def get_ingredients(
+    current_user=Depends(get_current_user),
+) -> dict:
+    """
+    Returns the LogMeal ingredient catalogue as {ingredients: [{id, name}]}.
+    Checks Supabase ingredient_cache first. If a row with fetched_at within the
+    last 24 hours exists, returns cached data without calling LogMeal.
+    On a cache miss, fetches from LogMeal, replaces the cache, and returns fresh data.
+    A cache write failure does not block the response — the fetched data is
+    returned to the client and the error is logged.
+    """
+    # ── Step 1: check cache ───────────────────────────────────────────────────
+    try:
+        cache_res = supabase.table("ingredient_cache").select("*").execute()
+        cached_rows: list[dict] = cache_res.data or []
+    except Exception as e:
+        print(f"[ingredients] cache read failed: {e}")
+        cached_rows = []
+
+    if cached_rows:
+        latest = max(cached_rows, key=lambda r: r["fetched_at"])
+        ts = latest["fetched_at"].replace("Z", "+00:00")
+        try:
+            fetched_dt = datetime.fromisoformat(ts)
+            if fetched_dt.tzinfo is None:
+                fetched_dt = fetched_dt.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) - fetched_dt < timedelta(hours=24):
+                print(
+                    f"ingredient cache hit — returning {len(cached_rows)} items from Supabase"
+                )
+                return {
+                    "ingredients": [
+                        {"id": r["id"], "name": r["name"]} for r in cached_rows
+                    ]
+                }
+        except (ValueError, KeyError):
+            pass  # unparseable timestamp — fall through to fetch
+
+    # ── Step 2: fetch from LogMeal ────────────────────────────────────────────
+    print("ingredient cache miss — fetching from LogMeal")
+    api_key = get_logmeal_key()
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{LOGMEAL_BASE_URL}/dataset/ingredients",
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=504,
+            detail={
+                "error": "Request timed out",
+                "detail": "Ingredient catalogue request timed out",
+            },
+        )
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "LogMeal unreachable",
+                "detail": str(exc),
+            },
+        )
+
+    if response.status_code == 401:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "LogMeal authentication failed",
+                "detail": "LogMeal API key invalid or expired",
+            },
+        )
+    if response.status_code == 429:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "Rate limit reached",
+                "detail": "Rate limit reached — please try again shortly",
+            },
+        )
+    if not response.is_success:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "LogMeal error",
+                "detail": f"LogMeal returned status {response.status_code}",
+            },
+        )
+
+    data = response.json()
+    if not isinstance(data, list):
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "Unexpected response",
+                "detail": "LogMeal returned an unexpected shape for the ingredient catalogue",
+            },
+        )
+
+    # ── Step 3: replace cache ─────────────────────────────────────────────────
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        supabase.table("ingredient_cache").delete().gte("id", 0).execute()
+        rows_to_insert: list[dict] = []
+        for item in data:
+            if not isinstance(item, dict) or "id" not in item or "name" not in item:
+                continue
+            row: dict = {
+                "id": int(item["id"]),
+                "name": str(item["name"]),
+                "fetched_at": now_iso,
+            }
+            for col in ("avg_quantity", "modifier_type", "state", "unit"):
+                if col in item:
+                    row[col] = item[col]
+            rows_to_insert.append(row)
+        if rows_to_insert:
+            supabase.table("ingredient_cache").insert(rows_to_insert).execute()
+    except Exception as e:
+        print(f"[ingredients] cache write failed: {e} — returning fetched data anyway")
+
+    # ── Step 4: return ────────────────────────────────────────────────────────
+    return {
+        "ingredients": [
+            {"id": int(item["id"]), "name": str(item["name"])}
+            for item in data
+            if isinstance(item, dict) and "id" in item and "name" in item
+        ]
+    }
+
+
+@router.post("/compute_nutrients")
+async def compute_nutrients(
+    payload: dict,
+    current_user=Depends(get_current_user),
+) -> dict:
+    """
+    Computes nutritional information for a basket of ingredients.
+    Payload: {"ingredients": [{"id": int, "amount": float}]}
+    Proxies to LogMeal /v2/nutrition/recipe/compute_nutrients.
+    Response includes ENERC_KCAL in nutritional_info.totalNutritients.
+    Note: LogMeal uses the typo 'totalNutritients' — preserved as-is.
+    """
+    api_key = get_logmeal_key()
+
+    if "ingredients" not in payload or not isinstance(payload["ingredients"], list):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Missing field",
+                "detail": "ingredients array is required",
+            },
+        )
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{LOGMEAL_BASE_URL}/nutrition/recipe/compute_nutrients",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=504,
+            detail={
+                "error": "Request timed out",
+                "detail": "Nutrition calculation timed out — please try again",
+            },
+        )
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "LogMeal unreachable",
+                "detail": str(exc),
+            },
+        )
+
+    if response.status_code == 401:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "LogMeal authentication failed",
+                "detail": "LogMeal API key invalid or expired",
+            },
+        )
+    if response.status_code == 429:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "Rate limit reached",
+                "detail": "Too many requests. Please wait a moment.",
+            },
+        )
+    if not response.is_success:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "LogMeal error",
+                "detail": f"LogMeal returned status {response.status_code}: {response.text[:200]}",
+            },
+        )
+
+    return response.json()
