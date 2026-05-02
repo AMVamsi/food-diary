@@ -435,6 +435,7 @@ async def compute_nutrients(
     Computes nutritional information for a basket of ingredients.
     Payload: {"ingredients": [{"id": int, "amount": float}]}
     Proxies to LogMeal /v2/nutrition/recipe/compute_nutrients.
+    Transforms payload: id→ingredientId, amount→ingredientAmount (LogMeal field names).
     Response includes ENERC_KCAL in nutritional_info.totalNutritients.
     Note: LogMeal uses the typo 'totalNutritients' — preserved as-is.
     """
@@ -449,12 +450,12 @@ async def compute_nutrients(
             },
         )
 
-    # LogMeal expects "ingredient_list" with "quantity", not "ingredients"/"amount"
+    # LogMeal expects "ingredient_list" with "ingredientId"/"ingredientAmount"
     logmeal_payload = {
         "ingredient_list": [
             {
-                "id": int(item["id"]),
-                "quantity": float(item.get("amount", item.get("quantity", 0))),
+                "ingredientId": int(item["id"]),
+                "ingredientAmount": float(item.get("amount", item.get("quantity", 0))),
             }
             for item in payload["ingredients"]
             if isinstance(item, dict) and "id" in item
