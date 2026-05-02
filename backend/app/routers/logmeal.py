@@ -291,30 +291,44 @@ async def get_ingredients(
     A cache write failure does not block the response — the fetched data is
     returned to the client and the error is logged.
     """
-    # ── Step 1: check cache ───────────────────────────────────────────────────
+    # ── Step 1: check cache freshness with a lightweight query ────────────────
     try:
-        cache_res = supabase.table("ingredient_cache").select("*").execute()
-        cached_rows: list[dict] = cache_res.data or []
+        latest_res = (
+            supabase.table("ingredient_cache")
+            .select("fetched_at")
+            .order("fetched_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        latest_rows: list[dict] = latest_res.data or []
     except Exception as e:
-        print(f"[ingredients] cache read failed: {e}")
-        cached_rows = []
+        print(f"[ingredients] cache freshness check failed: {e}")
+        latest_rows = []
 
-    if cached_rows:
-        latest = max(cached_rows, key=lambda r: r["fetched_at"])
-        ts = latest["fetched_at"].replace("Z", "+00:00")
+    if latest_rows:
+        ts = latest_rows[0]["fetched_at"].replace("Z", "+00:00")
         try:
             fetched_dt = datetime.fromisoformat(ts)
             if fetched_dt.tzinfo is None:
                 fetched_dt = fetched_dt.replace(tzinfo=timezone.utc)
             if datetime.now(timezone.utc) - fetched_dt < timedelta(hours=24):
-                print(
-                    f"ingredient cache hit — returning {len(cached_rows)} items from Supabase"
-                )
-                return {
-                    "ingredients": [
-                        {"id": r["id"], "name": r["name"]} for r in cached_rows
-                    ]
-                }
+                try:
+                    cache_res = (
+                        supabase.table("ingredient_cache")
+                        .select("id,name")
+                        .execute()
+                    )
+                    cached_rows: list[dict] = cache_res.data or []
+                    print(
+                        f"ingredient cache hit — returning {len(cached_rows)} items from Supabase"
+                    )
+                    return {
+                        "ingredients": [
+                            {"id": r["id"], "name": r["name"]} for r in cached_rows
+                        ]
+                    }
+                except Exception as e:
+                    print(f"[ingredients] cache read failed: {e}")
         except (ValueError, KeyError):
             pass  # unparseable timestamp — fall through to fetch
 
