@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   View,
   Text,
@@ -18,9 +18,13 @@ import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
 import { Camera } from 'expo-camera'
 
+import { useNavigation } from '@react-navigation/native'
+
 import BboxOverlay from '../components/BboxOverlay'
 import Button from '../components/Button'
 import ErrorMessage from '../components/ErrorMessage'
+import Input from '../components/Input'
+import { client } from '../api/client'
 import { useAuthStore } from '../store/auth'
 import { colors } from '../theme/colors'
 import { spacing } from '../theme/spacing'
@@ -29,11 +33,13 @@ import { typography } from '../theme/typography'
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface RecognitionCandidate {
+  id: number
   name: string
   prob: number
 }
 
 interface SegmentationRegion {
+  id: number
   contained_bbox: { x: number; y: number; w: number; h: number }
   recognition_results: RecognitionCandidate[]
 }
@@ -48,6 +54,43 @@ interface SegmentationResponse {
   processed_image_size: ProcessedImageSize
   occasion: string
   segmentation_results: SegmentationRegion[]
+}
+
+// LogMeal /confirm/dish response — we only care that it succeeded.
+interface ConfirmResponse {
+  status?: string
+  imageId?: number
+}
+
+// LogMeal /nutrition/recipe/nutritionalInfo — defensively typed.
+// LogMeal preserves the typo "totalNutritients"; we keep a fallback to
+// "totalNutrients" in case it is ever fixed upstream.
+interface KcalQuantity {
+  quantity: number
+  unit: string
+}
+interface NutrientBag {
+  totalNutritients?: { ENERC_KCAL?: KcalQuantity }
+  totalNutrients?: { ENERC_KCAL?: KcalQuantity }
+}
+interface NutritionItem {
+  food_name?: string
+  name?: string
+  serving_size?: number
+  unit?: string
+  nutritional_info?: NutrientBag
+}
+interface NutritionResponse {
+  serving_size?: number
+  nutritional_info?: NutrientBag
+  nutritional_info_per_item?: NutritionItem[]
+}
+
+function extractKcal(bag: NutrientBag | undefined): number {
+  const k =
+    bag?.totalNutritients?.ENERC_KCAL?.quantity ??
+    bag?.totalNutrients?.ENERC_KCAL?.quantity
+  return typeof k === 'number' ? k : 0
 }
 
 // ─── State machine ───────────────────────────────────────────────────────────
@@ -96,10 +139,233 @@ export default function PhotoLogScreen() {
   const [galleryPermission, setGalleryPermission] = useState<boolean | null>(null)
   const [permissionDeniedSource, setPermissionDeniedSource] = useState<'camera' | 'gallery' | null>(null)
 
+  const navigation = useNavigation()
+
+  // ─── #14 state ──────────────────────────────────────────────────────────────
+  // Per-region selected dish id, keyed by region INDEX in segmentation_results.
+  // We key by index — not region.id — because LogMeal does not always return a
+  // unique id field on each region (it's reliably present on candidates, not
+  // regions). Index is guaranteed unique within an image. The candidate's id
+  // is used as the value because that's what /confirm/dish expects.
+  const [selections, setSelections] = useState<Record<number, number>>({})
+  // Per-region transient state for the confirm-all action. Also keyed by
+  // index for the same reason.
+  const [regionStatus, setRegionStatus] = useState<
+    Record<number, 'idle' | 'pending' | 'done' | 'error'>
+  >({})
+  // True while the "Confirm selections" button is processing. Drives the
+  // button's loading prop and disables candidate taps.
+  const [confirmingAll, setConfirmingAll] = useState<boolean>(false)
+  // Settled nutrition response for the meal. Null until /logmeal/nutrition
+  // returns; presence of this object also means "we are now in step B".
+  const [nutrition, setNutrition] = useState<NutritionResponse | null>(null)
+  const [nutritionLoading, setNutritionLoading] = useState<boolean>(false)
+  const [nutritionError, setNutritionError] = useState<string | null>(null)
+  // Serving size, kept as a string per profile-screen convention. Parsed to a
+  // number only at calculation and save time.
+  const [servingInput, setServingInput] = useState<string>('')
+  const [saving, setSaving] = useState<boolean>(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
   const imageDisplayWidth = width - spacing.xxl * 2
 
   function getDisplayHeight(processedImageSize: ProcessedImageSize): number {
     return imageDisplayWidth * (processedImageSize.height / processedImageSize.width)
+  }
+
+  // ─── #14 derived + effects ────────────────────────────────────────────────
+
+  // Pre-select the highest-probability candidate for every region the first
+  // time a result is rendered. We only initialise regions we have not seen
+  // before so a user's manual change to selections survives re-renders.
+  useEffect(() => {
+    if (screen.phase !== 'result') return
+    setSelections((prev) => {
+      const next: Record<number, number> = { ...prev }
+      let changed = false
+      screen.response.segmentation_results.forEach((region, idx) => {
+        if (next[idx] === undefined && region.recognition_results.length > 0) {
+          next[idx] = region.recognition_results[0].id
+          changed = true
+        }
+      })
+      return changed ? next : prev
+    })
+  }, [screen])
+
+  const baseGrams: number = useMemo(() => {
+    const v = nutrition?.serving_size
+    return typeof v === 'number' && v > 0 ? v : 100
+  }, [nutrition])
+
+  const baseKcal: number = useMemo(() => extractKcal(nutrition?.nutritional_info), [nutrition])
+
+  const userGrams: number = useMemo(() => {
+    const n = parseFloat(servingInput)
+    return Number.isFinite(n) ? n : NaN
+  }, [servingInput])
+
+  const adjustedKcal: number = useMemo(() => {
+    if (!Number.isFinite(userGrams) || userGrams <= 0 || baseGrams <= 0) return 0
+    return (baseKcal / baseGrams) * userGrams
+  }, [baseKcal, baseGrams, userGrams])
+
+  const servingInvalid: boolean =
+    servingInput.trim() === '' || !Number.isFinite(userGrams) || userGrams <= 0
+
+  // Reset all #14 transient state. Used both on "Cancel" and on a successful
+  // save so the screen returns to a clean entry view.
+  function resetPhotoLogState(): void {
+    setSelections({})
+    setRegionStatus({})
+    setConfirmingAll(false)
+    setNutrition(null)
+    setNutritionLoading(false)
+    setNutritionError(null)
+    setServingInput('')
+    setSaving(false)
+    setSaveError(null)
+  }
+
+  // POST a single /logmeal/confirm for one region. Caller manages overall
+  // pending state; this returns a boolean so confirmAll can decide whether
+  // to fall through to the nutrition fetch or stop and surface per-region
+  // errors.
+  async function confirmRegion(
+    imageId: number,
+    region: SegmentationRegion,
+    regionIndex: number,
+    dishId: number,
+  ): Promise<boolean> {
+    // LogMeal /confirm/dish wants a regionId. Prefer the API-supplied
+    // region.id when present, otherwise fall back to the array index +1
+    // (LogMeal regionIds are 1-based when they do appear).
+    const apiRegionId =
+      typeof region.id === 'number' ? region.id : regionIndex + 1
+    setRegionStatus((s) => ({ ...s, [regionIndex]: 'pending' }))
+    try {
+      await client.post<ConfirmResponse>('/logmeal/confirm', {
+        imageId,
+        regionId: apiRegionId,
+        dish_id: dishId,
+      })
+      setRegionStatus((s) => ({ ...s, [regionIndex]: 'done' }))
+      return true
+    } catch (err) {
+      console.error('[PhotoLog] confirm region failed:', regionIndex, err)
+      setRegionStatus((s) => ({ ...s, [regionIndex]: 'error' }))
+      return false
+    }
+  }
+
+  // Fetch nutrition once for the whole image. Single call covering all
+  // regions — not one call per region. Called only after every region has
+  // been successfully confirmed.
+  async function fetchNutrition(imageId: number): Promise<void> {
+    setNutritionLoading(true)
+    setNutritionError(null)
+    try {
+      const res = await client.post<NutritionResponse>('/logmeal/nutrition', { imageId })
+      setNutrition(res.data)
+      const initialGrams = typeof res.data.serving_size === 'number' && res.data.serving_size > 0
+        ? res.data.serving_size
+        : 100
+      setServingInput(String(initialGrams))
+    } catch (err) {
+      console.error('[PhotoLog] nutrition fetch failed:', err)
+      setNutritionError('Could not load nutrition information — please try again')
+    } finally {
+      setNutritionLoading(false)
+    }
+  }
+
+  // Drives Step A → Step B. Confirms every region sequentially, allows
+  // partial failure, and only advances to nutrition when every region is
+  // confirmed successfully.
+  async function handleConfirmAll(): Promise<void> {
+    if (screen.phase !== 'result') return
+    const { response } = screen
+    setConfirmingAll(true)
+    let allOk = true
+    for (let idx = 0; idx < response.segmentation_results.length; idx++) {
+      const region = response.segmentation_results[idx]
+      const dishId = selections[idx]
+      if (dishId === undefined) {
+        allOk = false
+        setRegionStatus((s) => ({ ...s, [idx]: 'error' }))
+        continue
+      }
+      const ok = await confirmRegion(response.imageId, region, idx, dishId)
+      if (!ok) allOk = false
+    }
+    setConfirmingAll(false)
+    if (allOk) {
+      await fetchNutrition(response.imageId)
+    }
+  }
+
+  // Retry a single region after a failed confirm. Does not block other
+  // regions. If after retry every region is 'done', auto-advance to
+  // nutrition fetch.
+  async function handleRetryRegion(
+    region: SegmentationRegion,
+    regionIndex: number,
+  ): Promise<void> {
+    if (screen.phase !== 'result') return
+    const dishId = selections[regionIndex]
+    if (dishId === undefined) return
+    const ok = await confirmRegion(screen.response.imageId, region, regionIndex, dishId)
+    if (!ok) return
+    // Check whether all regions are now done.
+    const allDone = screen.response.segmentation_results.every(
+      (_r, i) => (i === regionIndex ? true : regionStatus[i] === 'done'),
+    )
+    if (allDone) {
+      await fetchNutrition(screen.response.imageId)
+    }
+  }
+
+  // Build the concatenated food_name from the user's confirmed selections.
+  function buildFoodName(response: SegmentationResponse): string {
+    const names = response.segmentation_results
+      .map((region, idx) => {
+        const id = selections[idx]
+        const c = region.recognition_results.find((rc) => rc.id === id)
+        return c?.name ?? null
+      })
+      .filter((n): n is string => n !== null && n.length > 0)
+    return names.join(' + ')
+  }
+
+  async function handleSaveDiary(): Promise<void> {
+    if (screen.phase !== 'result' || !nutrition || servingInvalid) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await client.post('/diary', {
+        entry_type: 'photo',
+        food_name: buildFoodName(screen.response),
+        kcal: Math.round(adjustedKcal * 10) / 10,
+        amount: userGrams,
+        unit: 'g',
+        occasion: screen.response.occasion ?? null,
+        image_url: null,
+        logged_at: new Date().toISOString(),
+      })
+      resetPhotoLogState()
+      setScreen({ phase: 'entry' })
+      navigation.navigate('Diary' as never)
+    } catch (err) {
+      console.error('[PhotoLog] save diary failed:', err)
+      setSaveError('Could not save to diary — please try again')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function handleCancel(): void {
+    resetPhotoLogState()
+    setScreen({ phase: 'entry' })
   }
 
   /** Convert any camera/gallery image to a small JPEG before upload.
@@ -230,6 +496,7 @@ export default function PhotoLogScreen() {
 
   function resetToEntry(): void {
     setPermissionDeniedSource(null)
+    resetPhotoLogState()
     setScreen({ phase: 'entry' })
   }
 
@@ -312,40 +579,156 @@ export default function PhotoLogScreen() {
 
   function renderRegionCard(region: SegmentationRegion, index: number): React.ReactNode {
     const top5 = region.recognition_results.slice(0, 5)
+    const selectedId = selections[index]
+    const status = regionStatus[index] ?? 'idle'
+    // After Step B has begun (nutrition is loaded or loading), candidate
+    // selection is locked — the user cannot retroactively change a confirmed
+    // selection without cancelling the flow.
+    const locked = nutrition !== null || nutritionLoading || confirmingAll
     return (
       <View key={index} style={styles.regionCard}>
-        <Text style={styles.regionCardTitle}>Region {index + 1}</Text>
-        {top5.map((candidate, ci) => (
-          <View
-            key={ci}
-            style={[
-              styles.candidateRow,
-              ci === 0 && styles.candidateRowTop,
-            ]}
-          >
-            <Text
+        <View style={styles.regionCardHeader}>
+          <Text style={styles.regionCardTitle}>Region {index + 1}</Text>
+          {status === 'pending' && (
+            <ActivityIndicator size="small" color={colors.gradientEnd} />
+          )}
+          {status === 'done' && (
+            <Text style={styles.regionStatusDone}>Confirmed</Text>
+          )}
+        </View>
+        {top5.map((candidate) => {
+          const isSelected = candidate.id === selectedId
+          return (
+            <TouchableOpacity
+              key={candidate.id}
+              activeOpacity={0.7}
+              disabled={locked}
+              onPress={() =>
+                setSelections((s) => ({ ...s, [index]: candidate.id }))
+              }
               style={[
-                styles.candidateName,
-                ci === 0 && styles.candidateNameTop,
-              ]}
-              numberOfLines={1}
-            >
-              {candidate.name}
-            </Text>
-            <Text
-              style={[
-                styles.candidateProb,
-                ci === 0 && styles.candidateProbTop,
+                styles.candidateRow,
+                isSelected ? styles.candidateRowSelected : styles.candidateRowUnselected,
               ]}
             >
-              {Math.round(candidate.prob * 100)}%
+              <Text
+                style={[
+                  styles.candidateName,
+                  isSelected && styles.candidateNameSelected,
+                ]}
+                numberOfLines={1}
+              >
+                {candidate.name}
+              </Text>
+              <Text
+                style={[
+                  styles.candidateProb,
+                  isSelected && styles.candidateProbSelected,
+                ]}
+              >
+                {Math.round(candidate.prob * 100)}%
+              </Text>
+            </TouchableOpacity>
+          )
+        })}
+        {status === 'error' && (
+          <View style={styles.regionErrorRow}>
+            <Text style={styles.regionErrorText}>
+              Could not confirm this region.
             </Text>
+            <TouchableOpacity
+              onPress={() => handleRetryRegion(region, index)}
+              disabled={confirmingAll}
+            >
+              <Text style={styles.regionRetryLink}>Retry</Text>
+            </TouchableOpacity>
           </View>
-        ))}
-        {/* #14: wire this button to DishConfirmationScreen, passing region index and top-5 candidates */}
-        <TouchableOpacity style={styles.confirmPlaceholder} disabled>
-          <Text style={styles.confirmPlaceholderText}>Confirm dish →</Text>
-        </TouchableOpacity>
+        )}
+      </View>
+    )
+  }
+
+  function renderNutritionSection(): React.ReactNode {
+    if (nutritionLoading) {
+      return (
+        <View style={styles.nutritionCard}>
+          <ActivityIndicator size="small" color={colors.gradientEnd} />
+          <Text style={styles.nutritionLoadingText}>Loading nutrition…</Text>
+        </View>
+      )
+    }
+    if (nutritionError) {
+      return (
+        <View style={styles.nutritionCard}>
+          <ErrorMessage message={nutritionError} />
+          <Button
+            title="Retry"
+            onPress={() => {
+              if (screen.phase === 'result') fetchNutrition(screen.response.imageId)
+            }}
+            variant="ghost"
+          />
+        </View>
+      )
+    }
+    if (!nutrition) return null
+
+    const items = nutrition.nutritional_info_per_item ?? []
+    const displayKcal = Math.round(adjustedKcal)
+
+    return (
+      <View style={styles.nutritionCard}>
+        <Text style={styles.nutritionLabel}>Total energy</Text>
+        <Text style={styles.nutritionKcal}>{displayKcal} kcal</Text>
+
+        {items.length > 0 && (
+          <View style={styles.itemsBlock}>
+            <Text style={styles.itemsHeading}>Per-item breakdown</Text>
+            {items.map((item, i) => {
+              const name = item.food_name ?? item.name ?? `Item ${i + 1}`
+              const qty = typeof item.serving_size === 'number' ? item.serving_size : null
+              const unit = item.unit ?? 'g'
+              const itemKcal = Math.round(extractKcal(item.nutritional_info))
+              return (
+                <View key={i} style={styles.itemRow}>
+                  <Text style={styles.itemName} numberOfLines={1}>{name}</Text>
+                  <Text style={styles.itemMeta}>
+                    {qty !== null ? `${qty} ${unit}` : '—'} · {itemKcal} kcal
+                  </Text>
+                </View>
+              )
+            })}
+          </View>
+        )}
+
+        <View style={styles.servingBlock}>
+          <Input
+            label="Serving size (g)"
+            value={servingInput}
+            onChangeText={setServingInput}
+            keyboardType="numeric"
+            hasError={servingInvalid}
+          />
+          {servingInvalid && (
+            <Text style={styles.servingHelp}>Enter a serving size greater than zero.</Text>
+          )}
+        </View>
+
+        {saveError && (
+          <View style={styles.saveErrorRow}>
+            <ErrorMessage message={saveError} />
+          </View>
+        )}
+
+        <View style={styles.saveRow}>
+          <Button
+            title="Save to diary"
+            onPress={handleSaveDiary}
+            loading={saving}
+            disabled={servingInvalid || saving}
+            variant="primary"
+          />
+        </View>
       </View>
     )
   }
@@ -397,10 +780,26 @@ export default function PhotoLogScreen() {
           </View>
         )}
 
+        {hasRegions && nutrition === null && !nutritionLoading && !nutritionError && (
+          <View style={styles.confirmAllRow}>
+            <Button
+              title="Confirm selections"
+              onPress={handleConfirmAll}
+              loading={confirmingAll}
+              disabled={confirmingAll}
+              variant="primary"
+            />
+          </View>
+        )}
+
+        {(nutrition !== null || nutritionLoading || nutritionError) && (
+          <View style={styles.nutritionWrapper}>{renderNutritionSection()}</View>
+        )}
+
         <View style={styles.startOverRow}>
           <Button
-            title="Try a different photo"
-            onPress={resetToEntry}
+            title={hasRegions ? 'Cancel' : 'Try a different photo'}
+            onPress={handleCancel}
             variant="ghost"
           />
         </View>
@@ -561,17 +960,34 @@ const styles = StyleSheet.create({
     color: colors.textLabel,
     marginBottom: spacing.sm,
   },
+  regionCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  regionStatusDone: {
+    ...typography.body,
+    color: colors.success,
+    fontWeight: '600',
+  },
   candidateRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.xs,
-  },
-  candidateRowTop: {
-    backgroundColor: colors.surfaceStrong,
-    borderRadius: 8,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
+    borderRadius: 8,
+    borderWidth: 1,
     marginBottom: spacing.xs,
+  },
+  candidateRowUnselected: {
+    borderColor: colors.border,
+    backgroundColor: 'transparent',
+  },
+  candidateRowSelected: {
+    borderColor: colors.borderFocused,
+    backgroundColor: colors.surfaceStrong,
   },
   candidateName: {
     ...typography.body,
@@ -579,7 +995,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: spacing.sm,
   },
-  candidateNameTop: {
+  candidateNameSelected: {
     color: colors.textPrimary,
     fontWeight: '600',
   },
@@ -588,21 +1004,97 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontVariant: ['tabular-nums'],
   },
-  candidateProbTop: {
+  candidateProbSelected: {
     color: colors.gradientEnd,
     fontWeight: '600',
   },
-  confirmPlaceholder: {
-    marginTop: spacing.md,
-    paddingVertical: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    alignItems: 'flex-end',
-    opacity: 0.5,
+  regionErrorRow: {
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  confirmPlaceholderText: {
+  regionErrorText: {
+    ...typography.error,
+    color: colors.errorText,
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  regionRetryLink: {
     ...typography.link,
     color: colors.gradientEnd,
+  },
+
+  // Confirm-all + nutrition
+  confirmAllRow: {
+    marginTop: spacing.lg,
+  },
+  nutritionWrapper: {
+    marginTop: spacing.lg,
+  },
+  nutritionCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    padding: spacing.lg,
+  },
+  nutritionLoadingText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+  },
+  nutritionLabel: {
+    ...typography.fieldLabel,
+    color: colors.textLabel,
+    marginBottom: spacing.xs,
+  },
+  nutritionKcal: {
+    ...typography.screenTitle,
+    color: colors.textPrimary,
+    marginBottom: spacing.lg,
+  },
+  itemsBlock: {
+    marginBottom: spacing.lg,
+  },
+  itemsHeading: {
+    ...typography.fieldLabel,
+    color: colors.textLabel,
+    marginBottom: spacing.sm,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  itemName: {
+    ...typography.body,
+    color: colors.textPrimary,
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  itemMeta: {
+    ...typography.body,
+    color: colors.textSecondary,
+    fontVariant: ['tabular-nums'],
+  },
+  servingBlock: {
+    marginTop: spacing.sm,
+  },
+  servingHelp: {
+    ...typography.error,
+    color: colors.errorText,
+    marginTop: -spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  saveErrorRow: {
+    marginBottom: spacing.sm,
+  },
+  saveRow: {
+    marginTop: spacing.sm,
   },
 
   // Empty segmentation state
