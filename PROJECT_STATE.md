@@ -28,7 +28,7 @@ Reference it at the start of every Copilot Chat session.
 | #11 | SPIKE: bbox overlay | ✅ done |
 | #12 | FastAPI LogMeal proxy | ✅ done — Railway redeploy required |
 | #13 | Photo log screen | ✅ done |
-| #14 | Dish confirmation + serving editor | ⬜ not started |
+| #14 | Dish confirmation + serving editor | ✅ done |
 | #15 | Ingredient catalogue cache | ⬜ not started |
 | #16 | Manual log screen | ⬜ not started |
 | #17 | FastAPI diary router | ⬜ not started |
