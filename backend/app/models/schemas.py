@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
@@ -129,3 +129,46 @@ class ResendOtpRequest(BaseModel):
     """Resend OTP payload — email address to resend the signup code to."""
 
     email: EmailStr
+
+
+# ── Diary ─────────────────────────────────────────────────────────────────────
+
+
+class DiaryEntryIn(BaseModel):
+    """Request body for creating a diary entry."""
+
+    entry_type: Literal["photo", "manual"]
+    food_name: str = Field(..., min_length=1)
+    kcal: float = Field(..., ge=0)
+    amount: float = Field(..., gt=0)
+    unit: Literal["g", "ml"] = "g"
+    occasion: Optional[Literal["breakfast", "lunch", "dinner", "snack"]] = None
+    image_url: Optional[str] = None
+    logged_at: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class DiaryEntryOut(BaseModel):
+    """Single diary entry as returned to the client."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    user_id: str
+    entry_type: str
+    food_name: str
+    kcal: float
+    amount: float
+    unit: Optional[str] = None
+    occasion: Optional[str] = None
+    image_url: Optional[str] = None
+    logged_at: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class DiaryDayOut(BaseModel):
+    """Single date group as returned by GET /diary."""
+
+    date: str
+    total_kcal: float
+    entries: List[DiaryEntryOut]

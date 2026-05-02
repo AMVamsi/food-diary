@@ -7,9 +7,9 @@ Reference it at the start of every Copilot Chat session.
 ---
 
 ## Current status
-#15 done — GET /logmeal/ingredients + POST /logmeal/compute_nutrients added to logmeal router; Supabase 24h cache in place.
-#16 done — ManualLogScreen fully implemented; catalogue loading, search, basket, kcal calculation, save to diary.
-Railway redeploy required to activate new /logmeal endpoints and POST /diary.
+#17 done — diary router fully implemented: POST /diary (201), GET /diary (grouped by date), DELETE /diary/{id} (204); Pydantic models moved to schemas.py.
+#18 done — DiaryScreen fully implemented: useFocusEffect fetch, state machine (loading/error/empty/populated), SectionList with gradient kcal headers, swipe-to-delete (PanResponder), pull-to-refresh, full-screen image modal.
+Railway redeploy required to activate new /logmeal endpoints, POST /diary, GET /diary, DELETE /diary/{id}.
 
 ---
 
@@ -33,8 +33,8 @@ Railway redeploy required to activate new /logmeal endpoints and POST /diary.
 | #14 | Dish confirmation + serving editor | ✅ done |
 | #15 | Ingredient catalogue cache | ✅ done — Railway redeploy required |
 | #16 | Manual log screen | ✅ done |
-| #17 | FastAPI diary router | ⬜ not started |
-| #18 | Diary screen | ⬜ not started |
+| #17 | FastAPI diary router | ✅ done — Railway redeploy required |
+| #18 | Diary screen | ✅ done |
 | #19 | API error handling | ⬜ not started |
 | #20 | Image upload to Supabase Storage | ⬜ not started |
 | #21 | EAS build — APK | ⬜ not started |
@@ -58,6 +58,8 @@ Railway redeploy required to activate new /logmeal endpoints and POST /diary.
 - Backend: /logmeal/segment, /logmeal/confirm, /logmeal/nutrition implemented — Railway redeploy required
 - Backend: /logmeal/ingredients (with Supabase 24h cache), /logmeal/compute_nutrients implemented — Railway redeploy required
 - Mobile: ManualLogScreen — catalogue load/cache, search, basket with gram editing, kcal calculation, save to diary
+- Backend: POST /diary (201), GET /diary (date-grouped, sorted), DELETE /diary/{id} (204, user-scoped); DiaryEntryIn, DiaryEntryOut, DiaryDayOut added to schemas.py
+- Mobile: DiaryScreen — useFocusEffect refetch, loading/error/empty/populated states, SectionList with MaskedView gradient kcal headers, PanResponder swipe-to-delete, pull-to-refresh, full-screen image modal
 
 ## Known issues / blockers
 - #9 profile router needs Railway redeploy to activate
