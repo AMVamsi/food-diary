@@ -449,6 +449,18 @@ async def compute_nutrients(
             },
         )
 
+    # LogMeal expects "ingredient_list" with "quantity", not "ingredients"/"amount"
+    logmeal_payload = {
+        "ingredient_list": [
+            {
+                "id": int(item["id"]),
+                "quantity": float(item.get("amount", item.get("quantity", 0))),
+            }
+            for item in payload["ingredients"]
+            if isinstance(item, dict) and "id" in item
+        ]
+    }
+
     try:
         async with httpx.AsyncClient(timeout=30.0) as http_client:
             response = await http_client.post(
@@ -457,7 +469,7 @@ async def compute_nutrients(
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
                 },
-                json=payload,
+                json=logmeal_payload,
             )
     except httpx.TimeoutException:
         raise HTTPException(
