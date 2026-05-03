@@ -191,10 +191,12 @@ async def confirm_dish(
             },
         )
 
-    # LogMeal calls this field "confirmedClass"; our mobile sends it as "dish_id".
+    # LogMeal field names differ from our mobile's field names:
+    #   dish_id       → confirmedClass
+    #   regionId      → food_item_position
     logmeal_payload = {
         "imageId": payload["imageId"],
-        "regionId": payload["regionId"],
+        "food_item_position": payload["regionId"],
         "confirmedClass": payload["dish_id"],
     }
     print(f"[confirm DEBUG] forwarding payload={logmeal_payload}")
