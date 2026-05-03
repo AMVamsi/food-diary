@@ -12,7 +12,13 @@ async def get_profile(current_user=Depends(get_current_user)) -> ProfileOut:
     """Return the authenticated user's profile row; 404 if no profile has been created yet."""
     user_id = str(current_user.id)
 
-    result = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
+    try:
+        result = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "Database error", "detail": str(e)},
+        )
 
     if not result.data:
         raise HTTPException(
@@ -34,7 +40,13 @@ async def upsert_profile(
     """Create or update the authenticated user's profile and recompute BMI when both weight and height are available."""
     user_id = str(current_user.id)
 
-    existing_result = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
+    try:
+        existing_result = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "Database error", "detail": str(e)},
+        )
     existing = existing_result.data[0] if existing_result.data else {}
 
     payload = profile_in.model_dump(exclude_none=True)
@@ -55,7 +67,13 @@ async def upsert_profile(
             detail={"error": "Database error", "detail": str(e)},
         )
 
-    updated = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
+    try:
+        updated = supabase.table("profiles").select("*").eq("user_id", user_id).execute()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "Database error", "detail": str(e)},
+        )
     if not updated.data:
         raise HTTPException(
             status_code=500,

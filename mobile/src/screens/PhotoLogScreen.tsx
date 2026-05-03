@@ -54,6 +54,7 @@ interface SegmentationResponse {
   processed_image_size: ProcessedImageSize
   occasion: string
   segmentation_results: SegmentationRegion[]
+  image_url: string | null
 }
 
 // LogMeal /confirm/dish response — we only care that it succeeded.
@@ -349,7 +350,7 @@ export default function PhotoLogScreen() {
         amount: userGrams,
         unit: 'g',
         occasion: screen.response.occasion ?? null,
-        image_url: null,
+        image_url: screen.response.image_url ?? null,
         logged_at: new Date().toISOString(),
       })
       resetPhotoLogState()
