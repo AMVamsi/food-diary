@@ -191,6 +191,8 @@ async def confirm_dish(
             },
         )
 
+    print(f"[confirm DEBUG] forwarding payload={payload}")
+
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(
@@ -201,6 +203,8 @@ async def confirm_dish(
                 },
                 json=payload,
             )
+
+        print(f"[confirm DEBUG] LogMeal status={response.status_code} body={response.text[:500]!r}")
 
         if response.status_code == 401:
             raise HTTPException(
