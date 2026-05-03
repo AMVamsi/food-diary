@@ -1,7 +1,7 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
 import httpx
 import os
 from app.db.supabase import supabase
@@ -27,6 +27,7 @@ def get_logmeal_key() -> str:
     return key
 
 
+
 @router.post("/segment")
 async def segment_image(
     file: UploadFile = File(...),
@@ -36,6 +37,8 @@ async def segment_image(
     Accepts a meal image upload and forwards it to the LogMeal segmentation API.
     Returns image_id, processed_image_size, occasion, and segmentation_results
     with bounding boxes and top dish candidates per region.
+    After a successful segmentation the image is uploaded to Supabase Storage
+    and a public image_url is included in the response (null if upload fails).
     The API key is injected server-side — it never leaves this backend.
     """
     api_key = get_logmeal_key()
@@ -87,7 +90,7 @@ async def segment_image(
                 status_code=429,
                 detail={
                     "error": "Rate limit reached",
-                    "detail": "Too many requests to the food recognition service. Please wait a moment.",
+                    "detail": "LogMeal rate limit reached — please wait a moment",
                 },
             )
 
@@ -103,6 +106,18 @@ async def segment_image(
                 },
             )
 
+        if response.status_code >= 500:
+            print(
+                f"[segment DEBUG] LogMeal status={response.status_code} body={response.text[:500]!r}"
+            )
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "error": "Food recognition service unavailable",
+                    "detail": "Food recognition service is temporarily unavailable",
+                },
+            )
+
         if not response.is_success:
             print(
                 f"[segment DEBUG] LogMeal status={response.status_code} body={response.text[:500]!r}"
@@ -115,7 +130,7 @@ async def segment_image(
                 },
             )
 
-        return response.json()
+        data: dict = response.json()
 
     except httpx.TimeoutException:
         raise HTTPException(
@@ -129,10 +144,27 @@ async def segment_image(
         raise HTTPException(
             status_code=502,
             detail={
-                "error": "LogMeal unreachable",
+                "error": "Service unreachable",
                 "detail": str(exc),
             },
         )
+
+    # Upload image to Supabase Storage. Failure must not block the response.
+    image_url: str | None = None
+    try:
+        user_id = str(current_user.id)
+        storage_path = f"{user_id}/{uuid.uuid4()}.jpg"
+        supabase.storage.from_("meal-images").upload(
+            storage_path,
+            file_content,
+            {"content-type": "image/jpeg"},
+        )
+        image_url = supabase.storage.from_("meal-images").get_public_url(storage_path)
+    except Exception as e:
+        print(f"[segment] Supabase Storage upload failed: {e} — returning image_url=null")
+
+    data["image_url"] = image_url
+    return data
 
 
 @router.post("/confirm")
@@ -170,12 +202,30 @@ async def confirm_dish(
                 json=payload,
             )
 
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "error": "LogMeal authentication failed",
+                    "detail": "The server LogMeal API key is invalid or expired",
+                },
+            )
+
         if response.status_code == 429:
             raise HTTPException(
                 status_code=429,
                 detail={
                     "error": "Rate limit reached",
-                    "detail": "Too many requests. Please wait a moment.",
+                    "detail": "LogMeal rate limit reached — please wait a moment",
+                },
+            )
+
+        if response.status_code >= 500:
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "error": "Food recognition service unavailable",
+                    "detail": "Food recognition service is temporarily unavailable",
                 },
             )
 
@@ -195,14 +245,14 @@ async def confirm_dish(
             status_code=504,
             detail={
                 "error": "Request timed out",
-                "detail": "The food recognition service timed out. Please try again.",
+                "detail": "The food confirmation service timed out. Please try again.",
             },
         )
     except httpx.RequestError as exc:
         raise HTTPException(
             status_code=502,
             detail={
-                "error": "LogMeal unreachable",
+                "error": "Service unreachable",
                 "detail": str(exc),
             },
         )
@@ -241,12 +291,30 @@ async def get_nutritional_info(
                 json=payload,
             )
 
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "error": "LogMeal authentication failed",
+                    "detail": "The server LogMeal API key is invalid or expired",
+                },
+            )
+
         if response.status_code == 429:
             raise HTTPException(
                 status_code=429,
                 detail={
                     "error": "Rate limit reached",
-                    "detail": "Too many requests. Please wait a moment.",
+                    "detail": "LogMeal rate limit reached — please wait a moment",
+                },
+            )
+
+        if response.status_code >= 500:
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "error": "Food recognition service unavailable",
+                    "detail": "Food recognition service is temporarily unavailable",
                 },
             )
 
@@ -273,7 +341,7 @@ async def get_nutritional_info(
         raise HTTPException(
             status_code=502,
             detail={
-                "error": "LogMeal unreachable",
+                "error": "Service unreachable",
                 "detail": str(exc),
             },
         )
@@ -354,7 +422,7 @@ async def get_ingredients(
         raise HTTPException(
             status_code=502,
             detail={
-                "error": "LogMeal unreachable",
+                "error": "Service unreachable",
                 "detail": str(exc),
             },
         )
@@ -364,7 +432,7 @@ async def get_ingredients(
             status_code=502,
             detail={
                 "error": "LogMeal authentication failed",
-                "detail": "LogMeal API key invalid or expired",
+                "detail": "The server LogMeal API key is invalid or expired",
             },
         )
     if response.status_code == 429:
@@ -372,7 +440,15 @@ async def get_ingredients(
             status_code=429,
             detail={
                 "error": "Rate limit reached",
-                "detail": "Rate limit reached — please try again shortly",
+                "detail": "LogMeal rate limit reached — please wait a moment",
+            },
+        )
+    if response.status_code >= 500:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "Food recognition service unavailable",
+                "detail": "Food recognition service is temporarily unavailable",
             },
         )
     if not response.is_success:
@@ -484,7 +560,7 @@ async def compute_nutrients(
         raise HTTPException(
             status_code=502,
             detail={
-                "error": "LogMeal unreachable",
+                "error": "Service unreachable",
                 "detail": str(exc),
             },
         )
@@ -494,7 +570,7 @@ async def compute_nutrients(
             status_code=502,
             detail={
                 "error": "LogMeal authentication failed",
-                "detail": "LogMeal API key invalid or expired",
+                "detail": "The server LogMeal API key is invalid or expired",
             },
         )
     if response.status_code == 429:
@@ -502,7 +578,15 @@ async def compute_nutrients(
             status_code=429,
             detail={
                 "error": "Rate limit reached",
-                "detail": "Too many requests. Please wait a moment.",
+                "detail": "LogMeal rate limit reached — please wait a moment",
+            },
+        )
+    if response.status_code >= 500:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "Food recognition service unavailable",
+                "detail": "Food recognition service is temporarily unavailable",
             },
         )
     if not response.is_success:
