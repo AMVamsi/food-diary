@@ -514,4 +514,6 @@ async def compute_nutrients(
             },
         )
 
-    return response.json()
+    data = response.json()
+    print(f"[compute_nutrients DEBUG] response keys={list(data.keys()) if isinstance(data, dict) else type(data)} body={str(data)[:500]}")
+    return data

@@ -39,26 +39,18 @@ type BasketItem = {
     grams: string
 }
 
-interface NutrientValue {
-    quantity: number
-    unit: string
-}
-
-interface NutrientBag {
-    totalNutritients?: Record<string, NutrientValue>
-    totalNutrients?: Record<string, NutrientValue>
+interface ComputedNutrient {
+    indicatorCode: string
+    indicatorAmount: number
 }
 
 interface ComputeNutrientsResponse {
-    nutritional_info?: NutrientBag
+    computed_nutrients?: ComputedNutrient[]
 }
 
 function extractKcal(data: ComputeNutrientsResponse): number {
-    const bag = data.nutritional_info
-    const kcal =
-        bag?.totalNutritients?.['ENERC_KCAL']?.quantity ??
-        bag?.totalNutrients?.['ENERC_KCAL']?.quantity
-    return typeof kcal === 'number' ? kcal : 0
+    const entry = data.computed_nutrients?.find(n => n.indicatorCode === 'ENERC_KCAL')
+    return typeof entry?.indicatorAmount === 'number' ? entry.indicatorAmount : 0
 }
 
 function mapApiError(err: unknown, fallback: string): string {
@@ -219,6 +211,7 @@ export default function ManualLogScreen() {
                     })),
                 },
             )
+            console.log('[ManualLog] compute_nutrients raw:', JSON.stringify(res.data))
             setCalculatedKcal(extractKcal(res.data))
         } catch (err: unknown) {
             setCalcError(
