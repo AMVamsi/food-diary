@@ -41,7 +41,7 @@ and #25 (final submission) remain.
 | #20 | Image upload to Supabase Storage | ✅ done |
 | #21 | EAS build — APK | ✅ done |
 | #22 | README + architecture docs | ✅ done |
-| #23 | Finalise AI_USAGE.md | | ✅ done |
+| #23 | Finalise AI_USAGE.md |  ✅ done |
 | #24 | Demo video | ⬜ not started |
 | #25 | Final submission | ⬜ not started |
 
