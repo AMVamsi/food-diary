@@ -191,13 +191,15 @@ async def confirm_dish(
             },
         )
 
-    # LogMeal field names differ from our mobile's field names:
-    #   dish_id       → confirmedClass
-    #   regionId      → food_item_position
+    # LogMeal field names and shapes differ from our mobile's:
+    #   dish_id   → confirmedClass  (array)
+    #   regionId  → food_item_position (array of ints, same length as confirmedClass)
+    # "source" is a required parallel array; "recognition" = picked from AI results.
     logmeal_payload = {
         "imageId": payload["imageId"],
-        "food_item_position": payload["regionId"],
-        "confirmedClass": payload["dish_id"],
+        "food_item_position": [payload["regionId"]],
+        "confirmedClass": [payload["dish_id"]],
+        "source": ["logmeal"],
     }
     print(f"[confirm DEBUG] forwarding payload={logmeal_payload}")
 

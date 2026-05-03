@@ -66,3 +66,4 @@ For manual entries: use slug `manual`, set Tool=manual.
 | confirm-debug | 2026-05-03 | manual | - | backend/app/routers/logmeal.py | debug log place to analyze | - | no deviations |
 | photo-log-confirm-fix | 2026-05-03 | manual | - | backend/app/routers/logmeal.py | photo log confirm issue identified and fixed + debug log place to analyze nutrition endpoint form logMeal | - | no deviations |
 | field-name | 2026-05-03 | manual | - | backend/app/routers/logmeal.py | photo log confirm issue identified and field name corrected + debug log place to analyze nutrition endpoint form logMeal | - | no deviations |
+| required-field | 2026-05-03 | manual | - | backend/app/routers/logmeal.py; mobile/src/screens/PhotoLogScreen.tsx | photo log confirm issue identified and field name corrected + debug log place to analyze nutrition endpoint form logMeal | - | no deviations |
