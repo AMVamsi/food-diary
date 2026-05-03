@@ -191,7 +191,13 @@ async def confirm_dish(
             },
         )
 
-    print(f"[confirm DEBUG] forwarding payload={payload}")
+    # LogMeal calls this field "confirmedClass"; our mobile sends it as "dish_id".
+    logmeal_payload = {
+        "imageId": payload["imageId"],
+        "regionId": payload["regionId"],
+        "confirmedClass": payload["dish_id"],
+    }
+    print(f"[confirm DEBUG] forwarding payload={logmeal_payload}")
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -201,7 +207,7 @@ async def confirm_dish(
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
                 },
-                json=payload,
+                json=logmeal_payload,
             )
 
         print(f"[confirm DEBUG] LogMeal status={response.status_code} body={response.text[:500]!r}")
@@ -284,6 +290,8 @@ async def get_nutritional_info(
             },
         )
 
+    print(f"[nutrition DEBUG] forwarding payload={payload}")
+
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(
@@ -292,8 +300,10 @@ async def get_nutritional_info(
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
                 },
-                json=payload,
+                json={"imageId": payload["imageId"]},
             )
+
+        print(f"[nutrition DEBUG] LogMeal status={response.status_code} body={response.text[:500]!r}")
 
         if response.status_code == 401:
             raise HTTPException(
