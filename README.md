@@ -2,7 +2,6 @@
 
 AI-powered mobile food diary. Users log meals by photographing food or searching ingredients manually. The app uses the LogMeal API for food recognition and nutrition data.
 
-Built as a take-home task for the AI in Health and Nutrition Lab RSE position.
 
 ## Stack
 
