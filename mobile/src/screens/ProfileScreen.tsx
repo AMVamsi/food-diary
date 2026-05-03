@@ -47,11 +47,11 @@ const ACTIVITY_OPTIONS = [
     { label: 'Very active', value: 'very_active' },
 ]
 
-function getBmiColour(bmi: number): string {
-    if (bmi < 18.5) return '#60a5fa'
-    if (bmi < 25.0) return '#4ade80'
-    if (bmi < 30.0) return '#fbbf24'
-    return '#f87171'
+function getBmiColor(bmi: number): string {
+    if (bmi < 18.5) return colors.bmiUnderweight
+    if (bmi < 25.0) return colors.bmiNormal
+    if (bmi < 30.0) return colors.bmiOverweight
+    return colors.bmiObese
 }
 
 function hexToRgba(hex: string, opacity: number): string {
@@ -82,7 +82,6 @@ export default function ProfileScreen() {
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [successMessage, setSuccessMessage] = useState<string | null>(null)
-    const [hasProfile, setHasProfile] = useState(false)
 
     useEffect(() => {
         const w = parseFloat(weightKg)
@@ -112,13 +111,10 @@ export default function ProfileScreen() {
             setGoal(data.goal ?? null)
             setDietaryPreference(data.dietary_preference ?? null)
             setActivityLevel(data.activity_level ?? null)
-            setHasProfile(true)
         } catch (err: unknown) {
             const apiErr = err as { response?: { status?: number } }
-            if (apiErr.response?.status === 404) {
-                setHasProfile(false)
+            if (apiErr.response?.status !== 404) {
                 // 404 is expected for new users — not an error state
-            } else {
                 setError('Failed to load profile. Please try again.')
             }
         } finally {
@@ -159,7 +155,6 @@ export default function ProfileScreen() {
             if (activityLevel) payload.activity_level = activityLevel
 
             await client.put('/profile', payload)
-            setHasProfile(true)
             setSuccessMessage('Profile saved successfully')
             setTimeout(() => setSuccessMessage(null), 3000)
         } catch (err: unknown) {
@@ -194,7 +189,7 @@ export default function ProfileScreen() {
         )
     }
 
-    const bmiColour = bmi !== null ? getBmiColour(bmi) : null
+    const bmiColor = bmi !== null ? getBmiColor(bmi) : null
 
     return (
         <KeyboardAvoidingView
@@ -221,17 +216,17 @@ export default function ProfileScreen() {
                     {/* Header row */}
                     <View style={styles.headerRow}>
                         <Text style={styles.screenTitle}>Profile</Text>
-                        {bmi !== null && bmiColour !== null && (
+                        {bmi !== null && bmiColor !== null && (
                             <View
                                 style={[
                                     styles.bmiBadge,
                                     {
-                                        backgroundColor: hexToRgba(bmiColour, 0.15),
-                                        borderColor: bmiColour,
+                                        backgroundColor: hexToRgba(bmiColor, 0.15),
+                                        borderColor: bmiColor,
                                     },
                                 ]}
                             >
-                                <Text style={[styles.bmiText, { color: bmiColour }]}>
+                                <Text style={[styles.bmiText, { color: bmiColor }]}>
                                     BMI {bmi}
                                 </Text>
                             </View>
@@ -378,17 +373,17 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     successBanner: {
-        backgroundColor: 'rgba(74, 222, 128, 0.08)',
+        backgroundColor: colors.successBannerBg,
         borderWidth: 1,
-        borderColor: 'rgba(74, 222, 128, 0.25)',
+        borderColor: colors.successBannerBorder,
         borderRadius: 10,
-        paddingVertical: 10,
-        paddingHorizontal: 14,
+        paddingVertical: spacing.sm + 2,
+        paddingHorizontal: spacing.md + 2,
         marginTop: spacing.lg,
     },
     successText: {
-        fontSize: 13,
-        color: '#4ade80',
+        ...typography.body,
+        color: colors.successBannerText,
     },
     errorMargin: {
         marginTop: spacing.lg,

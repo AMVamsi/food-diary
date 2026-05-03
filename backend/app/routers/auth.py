@@ -136,25 +136,13 @@ def verify_otp(body: OtpVerifyRequest) -> AuthResponse:
             user = response.user
             session = response.session
             if user is not None and session is not None:
-                print(
-                    f"[verify-otp] success with type={otp_type} user={user.id}",
-                    flush=True,
-                )
                 return AuthResponse(
                     access_token=session.access_token,
                     user_id=str(user.id),
                 )
-            print(
-                f"[verify-otp] null user/session with type={otp_type}",
-                flush=True,
-            )
         except HTTPException:
             raise
         except AuthApiError as e:
-            print(
-                f"[verify-otp] AuthApiError type={otp_type} status={e.status}: {e}",
-                flush=True,
-            )
             if e.status == 429:
                 raise HTTPException(
                     status_code=429,
@@ -165,10 +153,6 @@ def verify_otp(body: OtpVerifyRequest) -> AuthResponse:
                 )
             last_error = str(e)
         except Exception as e:
-            print(
-                f"[verify-otp] Exception type={otp_type} {type(e).__name__}: {e}",
-                flush=True,
-            )
             last_error = str(e)
 
     raise HTTPException(
@@ -184,7 +168,6 @@ def resend_otp(body: ResendOtpRequest) -> None:
         if not hasattr(supabase.auth, "resend"):
             # Older gotrue-py versions do not expose resend(); this endpoint
             # does not attempt a fallback and returns 501 instead.
-            print("[resend-otp] resend() not available; returning 501", flush=True)
             raise HTTPException(
                 status_code=501,
                 detail={
@@ -193,11 +176,9 @@ def resend_otp(body: ResendOtpRequest) -> None:
                 },
             )
         supabase.auth.resend({"type": "signup", "email": body.email})
-        print(f"[resend-otp] sent to {body.email}", flush=True)
     except HTTPException:
         raise
     except AuthApiError as e:
-        print(f"[resend-otp] AuthApiError status={e.status}: {e}", flush=True)
         if e.status == 429:
             raise HTTPException(
                 status_code=429,
@@ -211,7 +192,6 @@ def resend_otp(body: ResendOtpRequest) -> None:
             detail={"error": "Resend failed", "detail": str(e)},
         )
     except Exception as e:
-        print(f"[resend-otp] Exception {type(e).__name__}: {e}", flush=True)
         raise HTTPException(
             status_code=500,
             detail={"error": "Resend failed", "detail": str(e)},

@@ -26,8 +26,8 @@ import Svg, { Rect, G, Text as SvgText } from 'react-native-svg'
 import { colors } from '../theme/colors'
 
 const strokeColor = colors.gradientEnd
-const labelBg = 'rgba(6, 182, 212, 0.85)'   // semi-transparent cyan — SVG needs string literal
-const labelText = '#0c1426'                   // dark text on cyan background — SVG text fill
+const labelBg = 'rgba(6, 182, 212, 0.85)'   // semi-transparent gradientEnd — SVG fill needs string literal
+const labelText = colors.bgGradientStart     // dark bg color — ensures readable contrast on cyan label
 
 interface Region {
   contained_bbox: { x: number; y: number; w: number; h: number }

@@ -233,7 +233,6 @@ export default function DiaryScreen() {
             setDays(data)
             setScreenState(data.length === 0 ? 'empty' : 'populated')
         } catch (err: unknown) {
-            console.log('[DiaryScreen] fetch error:', JSON.stringify(err))
             const msg = mapApiError(err, 'Could not load diary — tap Retry')
             setFetchError(msg)
             setScreenState('error')
@@ -587,7 +586,7 @@ const styles = StyleSheet.create({
     // Modal
     modalBackdrop: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.88)',
+        backgroundColor: colors.modalBackdrop,
         justifyContent: 'center',
         alignItems: 'center',
     },

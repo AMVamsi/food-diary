@@ -45,16 +45,18 @@ if logmeal_router is not None:
 
 
 @app.get("/health")
-def health():
+def health() -> dict:
+    """Liveness probe — returns 200 OK when the process is running."""
     return {"status": "ok"}
 
 
 @app.get("/health/db")
-async def health_db():
+async def health_db() -> dict:
+    """Readiness probe — verifies the Supabase connection is reachable."""
     try:
         from app.db.supabase import supabase
 
-        result = supabase.table("profiles").select("count").execute()
+        supabase.table("profiles").select("count").execute()
         return {"status": "ok", "supabase": "connected"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}

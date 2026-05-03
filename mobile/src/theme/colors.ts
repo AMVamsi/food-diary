@@ -37,4 +37,19 @@ export const colors = {
 
     // Success
     success: '#67E8F9',
+
+    // BMI category colors — used by ProfileScreen badge
+    bmiUnderweight: '#60a5fa',
+    bmiNormal: '#4ade80',
+    bmiOverweight: '#fbbf24',
+    bmiObese: '#f87171',
+
+    // Success banner (profile save)
+    successBannerBg: 'rgba(74, 222, 128, 0.08)',
+    successBannerBorder: 'rgba(74, 222, 128, 0.25)',
+    successBannerText: '#4ade80',
+
+    // Overlays
+    modalBackdrop: 'rgba(0,0,0,0.88)',
+    loadingImageOverlay: 'rgba(12, 20, 38, 0.45)',
 } as const

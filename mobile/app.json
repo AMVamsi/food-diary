@@ -3,6 +3,21 @@
     "name": "Food Diary",
     "slug": "food-diary",
     "version": "1.0.0",
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.fooddiary.app",
+      "versionCode": 1
+    },
+    "ios": {
+      "bundleIdentifier": "com.fooddiary.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d40de956-abe5-46ef-a6bb-7bec79afb435"
+      }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

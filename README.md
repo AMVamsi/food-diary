@@ -22,4 +22,7 @@ food-diary/
 See docs/ARCHITECTURE.md for full instructions.
 
 ## APK
-Download link: _added on Day 3_
+
+Download link: [to be added after build]
+
+Requires Android 10 (API 29) or later. To install, enable "Install unknown apps" for your browser or file manager, open the downloaded APK, and follow the on-screen prompts — the "Food Diary" icon will appear on your home screen.

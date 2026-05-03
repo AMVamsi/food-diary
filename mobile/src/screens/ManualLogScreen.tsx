@@ -211,7 +211,6 @@ export default function ManualLogScreen() {
                     })),
                 },
             )
-            console.log('[ManualLog] compute_nutrients raw:', JSON.stringify(res.data))
             setCalculatedKcal(extractKcal(res.data))
         } catch (err: unknown) {
             setCalcError(
