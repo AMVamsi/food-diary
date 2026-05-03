@@ -41,7 +41,7 @@ and #25 (final submission) remain.
 | #20 | Image upload to Supabase Storage | ✅ done |
 | #21 | EAS build — APK | ✅ done |
 | #22 | README + architecture docs | ✅ done |
-| #23 | Finalise AI_USAGE.md | ⬜ not started |
+| #23 | Finalise AI_USAGE.md |  ✅ done |
 | #24 | Demo video | ⬜ not started |
 | #25 | Final submission | ⬜ not started |
 
@@ -69,7 +69,9 @@ and #25 (final submission) remain.
 
 ## Known issues / blockers
 
-- 
+- The application uses free-tier services for this submission.
+
+See [LIMITATIONS.md](../LIMITATIONS.md) for specific rate limits and constraints that apply to the current deployment.
 
 ## Environment
 

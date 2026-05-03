@@ -5,9 +5,6 @@ A mobile food diary application for tracking daily meal intake.
 Users log meals either by photographing food or searching ingredients manually.
 The app uses the LogMeal API for AI-powered food recognition and nutrition data.
 
-Built as a take-home task for a Research Software Engineer position at the
-AI in Health and Nutrition Lab.
-
 ---
 
 ## Users and flows
