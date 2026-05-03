@@ -228,32 +228,40 @@ export default function PhotoLogScreen() {
     setSaveError(null)
   }
 
-  // POST a single /logmeal/confirm for one region. Caller manages overall
-  // pending state; this returns a boolean so confirmAll can decide whether
-  // to fall through to the nutrition fetch or stop and surface per-region
-  // errors.
-  async function confirmRegion(
+  // POST all region confirmations in one batch call — LogMeal's /confirm/dish
+  // is designed for arrays. Calling it once per region overwrites prior
+  // confirmations, causing nutrition to only see the last-confirmed region.
+  async function confirmAllRegions(
     imageId: number,
-    region: SegmentationRegion,
-    regionIndex: number,
-    dishId: number,
+    regions: SegmentationRegion[],
+    selectedDishIds: Record<number, number>,
   ): Promise<boolean> {
-    // LogMeal /confirm/dish wants a regionId. Prefer the API-supplied
-    // region.id when present, otherwise fall back to the array index +1
-    // (LogMeal regionIds are 1-based when they do appear).
-    const apiRegionId = region.food_item_position
-    setRegionStatus((s) => ({ ...s, [regionIndex]: 'pending' }))
+    const positions: number[] = []
+    const classes: number[] = []
+    for (let idx = 0; idx < regions.length; idx++) {
+      const dishId = selectedDishIds[idx]
+      if (dishId === undefined) return false
+      positions.push(regions[idx].food_item_position)
+      classes.push(dishId)
+    }
+    const pending: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {}
+    regions.forEach((_, idx) => { pending[idx] = 'pending' })
+    setRegionStatus(pending)
     try {
       await client.post<ConfirmResponse>('/logmeal/confirm', {
         imageId,
-        regionId: apiRegionId,
-        dish_id: dishId,
+        food_item_position: positions,
+        confirmedClass: classes,
       })
-      setRegionStatus((s) => ({ ...s, [regionIndex]: 'done' }))
+      const done: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {}
+      regions.forEach((_, idx) => { done[idx] = 'done' })
+      setRegionStatus(done)
       return true
     } catch (err) {
-      console.error('[PhotoLog] confirm region failed:', regionIndex, err)
-      setRegionStatus((s) => ({ ...s, [regionIndex]: 'error' }))
+      console.error('[PhotoLog] confirm all regions failed:', err)
+      const error: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {}
+      regions.forEach((_, idx) => { error[idx] = 'error' })
+      setRegionStatus(error)
       return false
     }
   }
@@ -262,6 +270,7 @@ export default function PhotoLogScreen() {
   // regions — not one call per region. Called only after every region has
   // been successfully confirmed.
   async function fetchNutrition(imageId: number): Promise<void> {
+    if (nutritionLoading || nutrition !== null) return
     setNutritionLoading(true)
     setNutritionError(null)
     try {
@@ -279,50 +288,30 @@ export default function PhotoLogScreen() {
     }
   }
 
-  // Drives Step A → Step B. Confirms every region sequentially, allows
-  // partial failure, and only advances to nutrition when every region is
-  // confirmed successfully.
+  // Drives Step A → Step B. Confirms all regions in one batch call, then
+  // advances to nutrition fetch on success.
   async function handleConfirmAll(): Promise<void> {
     if (screen.phase !== 'result') return
     const { response } = screen
+    const missing = response.segmentation_results.some((_, idx) => selections[idx] === undefined)
+    if (missing) {
+      const next: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {}
+      response.segmentation_results.forEach((_, idx) => {
+        next[idx] = selections[idx] === undefined ? 'error' : (regionStatus[idx] ?? 'idle')
+      })
+      setRegionStatus(next)
+      return
+    }
     setConfirmingAll(true)
-    let allOk = true
-    for (let idx = 0; idx < response.segmentation_results.length; idx++) {
-      const region = response.segmentation_results[idx]
-      const dishId = selections[idx]
-      if (dishId === undefined) {
-        allOk = false
-        setRegionStatus((s) => ({ ...s, [idx]: 'error' }))
-        continue
-      }
-      const ok = await confirmRegion(response.imageId, region, idx, dishId)
-      if (!ok) allOk = false
-    }
+    const ok = await confirmAllRegions(response.imageId, response.segmentation_results, selections)
     setConfirmingAll(false)
-    if (allOk) {
-      await fetchNutrition(response.imageId)
-    }
+    if (ok) await fetchNutrition(response.imageId)
   }
 
-  // Retry a single region after a failed confirm. Does not block other
-  // regions. If after retry every region is 'done', auto-advance to
-  // nutrition fetch.
-  async function handleRetryRegion(
-    region: SegmentationRegion,
-    regionIndex: number,
-  ): Promise<void> {
-    if (screen.phase !== 'result') return
-    const dishId = selections[regionIndex]
-    if (dishId === undefined) return
-    const ok = await confirmRegion(screen.response.imageId, region, regionIndex, dishId)
-    if (!ok) return
-    // Check whether all regions are now done.
-    const allDone = screen.response.segmentation_results.every(
-      (_r, i) => (i === regionIndex ? true : regionStatus[i] === 'done'),
-    )
-    if (allDone) {
-      await fetchNutrition(screen.response.imageId)
-    }
+  // Retry re-confirms all regions as a batch — LogMeal needs all positions
+  // in a single call, so there is no meaningful per-region retry.
+  async function handleRetryRegion(): Promise<void> {
+    await handleConfirmAll()
   }
 
   // Build the concatenated food_name from the user's confirmed selections.
@@ -637,7 +626,7 @@ export default function PhotoLogScreen() {
               Could not confirm this region.
             </Text>
             <TouchableOpacity
-              onPress={() => handleRetryRegion(region, index)}
+              onPress={handleRetryRegion}
               disabled={confirmingAll}
             >
               <Text style={styles.regionRetryLink}>Retry</Text>

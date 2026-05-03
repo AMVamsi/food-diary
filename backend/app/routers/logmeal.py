@@ -173,33 +173,36 @@ async def confirm_dish(
     current_user=Depends(get_current_user),
 ) -> dict:
     """
-    Forwards the user's dish selection to LogMeal for confirmation.
-    Payload must contain imageId, dish_id, and regionId as returned
-    by the segmentation step.
+    Forwards all region confirmations to LogMeal in a single call.
+    Payload: {imageId, food_item_position: int[], confirmedClass: int[]}
+    Arrays must be non-empty and equal length. source is generated server-side.
     """
     api_key = get_logmeal_key()
 
-    # Validate required fields are present before forwarding
-    required = {"imageId", "dish_id", "regionId"}
-    missing = required - set(payload.keys())
-    if missing:
+    food_positions = payload.get("food_item_position")
+    confirmed_classes = payload.get("confirmedClass")
+
+    if not payload.get("imageId"):
         raise HTTPException(
             status_code=400,
-            detail={
-                "error": "Missing fields",
-                "detail": f"Required fields missing from payload: {sorted(missing)}",
-            },
+            detail={"error": "Missing field", "detail": "imageId is required"},
+        )
+    if not isinstance(food_positions, list) or not isinstance(confirmed_classes, list):
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "Invalid payload", "detail": "food_item_position and confirmedClass must be arrays"},
+        )
+    if len(food_positions) == 0 or len(food_positions) != len(confirmed_classes):
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "Invalid payload", "detail": "food_item_position and confirmedClass must be non-empty arrays of equal length"},
         )
 
-    # LogMeal field names and shapes differ from our mobile's:
-    #   dish_id   → confirmedClass  (array)
-    #   regionId  → food_item_position (array of ints, same length as confirmedClass)
-    # "source" is a required parallel array; "recognition" = picked from AI results.
     logmeal_payload = {
         "imageId": payload["imageId"],
-        "food_item_position": [payload["regionId"]],
-        "confirmedClass": [payload["dish_id"]],
-        "source": ["logmeal"],
+        "food_item_position": food_positions,
+        "confirmedClass": confirmed_classes,
+        "source": ["logmeal"] * len(confirmed_classes),
     }
     print(f"[confirm DEBUG] forwarding payload={logmeal_payload}")
 
