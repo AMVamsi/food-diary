@@ -176,12 +176,14 @@ export default function ManualLogScreen() {
 
     // ── Basket actions ────────────────────────────────────────────────────────
 
-    const addToBasket = useCallback((item: CatalogueItem) => {
-        setBasket(prev => {
-            if (prev.some(b => b.ingredient.id === item.id)) return prev
-            return [...prev, { ingredient: item, grams: '100' }]
-        })
-    }, [])
+    const toggleBasket = useCallback((item: CatalogueItem) => {
+        if (basketIds.has(item.id)) {
+            setBasket(prev => prev.filter(b => b.ingredient.id !== item.id))
+            setCalculatedKcal(null)
+        } else {
+            setBasket(prev => [...prev, { ingredient: item, grams: '100' }])
+        }
+    }, [basketIds])
 
     const removeFromBasket = useCallback((id: number) => {
         setBasket(prev => prev.filter(b => b.ingredient.id !== id))
@@ -347,7 +349,7 @@ export default function ManualLogScreen() {
                                         styles.ingredientRow,
                                         inBasket ? styles.ingredientRowSelected : null,
                                     ]}
-                                    onPress={() => addToBasket(item)}
+                                    onPress={() => toggleBasket(item)}
                                     activeOpacity={0.7}
                                 >
                                     <Text
@@ -360,7 +362,9 @@ export default function ManualLogScreen() {
                                         {item.name}
                                     </Text>
                                     {inBasket ? (
-                                        <Text style={styles.checkMark}>✓</Text>
+                                        <View style={styles.checkMarkBadge}>
+                                            <Text style={styles.checkMarkIcon}>✓</Text>
+                                        </View>
                                     ) : null}
                                 </TouchableOpacity>
                             )
@@ -508,10 +512,19 @@ const styles = StyleSheet.create({
     ingredientNameSelected: {
         color: colors.gradientMid,
     },
-    checkMark: {
-        ...typography.body,
-        color: colors.gradientMid,
+    checkMarkBadge: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: colors.gradientMid,
+        justifyContent: 'center',
+        alignItems: 'center',
         marginLeft: spacing.sm,
+    },
+    checkMarkIcon: {
+        ...typography.body,
+        color: '#fff',
+        fontSize: 12,
     },
     refineHint: {
         ...typography.subtitle,
