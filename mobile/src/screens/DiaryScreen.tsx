@@ -4,7 +4,6 @@ import {
     Animated,
     Image,
     Modal,
-    PanResponder,
     RefreshControl,
     SectionList,
     StyleSheet,
@@ -82,7 +81,6 @@ function mapApiError(err: unknown, fallback: string): string {
 // Animated — no third-party gesture library required.
 
 const DELETE_BTN_WIDTH = 80
-const SWIPE_OPEN_THRESHOLD = 50
 
 interface SwipeableRowProps {
     children: React.ReactNode
@@ -111,34 +109,12 @@ function SwipeableRow({ children, onDelete, deleting, deleteError }: SwipeableRo
         }).start(() => { isOpen.current = true })
     }, [translateX])
 
-    const panResponder = useRef(
-        PanResponder.create({
-            // Only capture gesture when horizontal movement dominates
-            onMoveShouldSetPanResponder: (_, gs) =>
-                Math.abs(gs.dx) > 6 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
-            onPanResponderMove: (_, gs) => {
-                const base = isOpen.current ? -DELETE_BTN_WIDTH : 0
-                const next = base + gs.dx
-                // Clamp: can only swipe left, max DELETE_BTN_WIDTH
-                translateX.setValue(Math.max(-DELETE_BTN_WIDTH, Math.min(0, next)))
-            },
-            onPanResponderRelease: (_, gs) => {
-                const delta = gs.dx
-                if (isOpen.current) {
-                    // If swiped right enough to close
-                    if (delta > SWIPE_OPEN_THRESHOLD) { close() } else { open() }
-                } else {
-                    // If swiped left enough to open
-                    if (delta < -SWIPE_OPEN_THRESHOLD) { open() } else { close() }
-                }
-            },
-            onPanResponderTerminate: () => { close() },
-        })
-    ).current
+    const handleRowPress = useCallback(() => {
+        if (isOpen.current) { close() } else { open() }
+    }, [close, open])
 
     return (
         <View style={swipeStyles.wrapper}>
-            {/* Delete action — sits behind the row */}
             <View style={swipeStyles.actionsContainer}>
                 <TouchableOpacity
                     style={swipeStyles.deleteAction}
@@ -154,10 +130,11 @@ function SwipeableRow({ children, onDelete, deleting, deleteError }: SwipeableRo
                 </TouchableOpacity>
             </View>
             <Animated.View
-                style={{ transform: [{ translateX }] }}
-                {...panResponder.panHandlers}
+                style={{ transform: [{ translateX }], backgroundColor: colors.surface }}
             >
-                {children}
+                <TouchableOpacity activeOpacity={0.85} onPress={handleRowPress}>
+                    {children}
+                </TouchableOpacity>
                 {deleteError ? (
                     <Text style={swipeStyles.inlineError}>{deleteError}</Text>
                 ) : null}
