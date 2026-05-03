@@ -6,7 +6,6 @@ import httpx
 import os
 from app.db.supabase import supabase
 from app.middleware.auth_guard import get_current_user
-from app.models.schemas import ErrorResponse
 
 router = APIRouter()
 
@@ -58,10 +57,6 @@ async def segment_image(
     if content_type == "image/jpg":
         content_type = "image/jpeg"
 
-    print(
-        f"[segment DEBUG] filename={file.filename!r} content_type_raw={file.content_type!r} content_type_used={content_type!r} size={len(file_content)}"
-    )
-
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
@@ -97,7 +92,6 @@ async def segment_image(
         if response.status_code == 400:
             # LogMeal 400 = bad image (too large, unsupported format, corrupt).
             # Surface as 422 so the client shows "photo could not be processed".
-            print(f"[segment DEBUG] LogMeal 400 body={response.text[:500]!r}")
             raise HTTPException(
                 status_code=422,
                 detail={
@@ -107,9 +101,6 @@ async def segment_image(
             )
 
         if response.status_code >= 500:
-            print(
-                f"[segment DEBUG] LogMeal status={response.status_code} body={response.text[:500]!r}"
-            )
             raise HTTPException(
                 status_code=502,
                 detail={
@@ -119,9 +110,6 @@ async def segment_image(
             )
 
         if not response.is_success:
-            print(
-                f"[segment DEBUG] LogMeal status={response.status_code} body={response.text[:500]!r}"
-            )
             raise HTTPException(
                 status_code=502,
                 detail={
@@ -160,8 +148,8 @@ async def segment_image(
             {"content-type": "image/jpeg"},
         )
         image_url = supabase.storage.from_("meal-images").get_public_url(storage_path)
-    except Exception as e:
-        print(f"[segment] Supabase Storage upload failed: {e} — returning image_url=null")
+    except Exception:
+        pass  # Storage upload failure must not block the segmentation response
 
     data["image_url"] = image_url
     return data
@@ -204,7 +192,6 @@ async def confirm_dish(
         "confirmedClass": confirmed_classes,
         "source": ["logmeal"] * len(confirmed_classes),
     }
-    print(f"[confirm DEBUG] forwarding payload={logmeal_payload}")
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -216,8 +203,6 @@ async def confirm_dish(
                 },
                 json=logmeal_payload,
             )
-
-        print(f"[confirm DEBUG] LogMeal status={response.status_code} body={response.text[:500]!r}")
 
         if response.status_code == 401:
             raise HTTPException(
@@ -297,8 +282,6 @@ async def get_nutritional_info(
             },
         )
 
-    print(f"[nutrition DEBUG] forwarding payload={payload}")
-
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(
@@ -309,8 +292,6 @@ async def get_nutritional_info(
                 },
                 json={"imageId": payload["imageId"]},
             )
-
-        print(f"[nutrition DEBUG] LogMeal status={response.status_code} body={response.text[:500]!r}")
 
         if response.status_code == 401:
             raise HTTPException(
@@ -390,8 +371,7 @@ async def get_ingredients(
             .execute()
         )
         latest_rows: list[dict] = latest_res.data or []
-    except Exception as e:
-        print(f"[ingredients] cache freshness check failed: {e}")
+    except Exception:
         latest_rows = []
 
     if latest_rows:
@@ -408,21 +388,17 @@ async def get_ingredients(
                         .execute()
                     )
                     cached_rows: list[dict] = cache_res.data or []
-                    print(
-                        f"ingredient cache hit — returning {len(cached_rows)} items from Supabase"
-                    )
                     return {
                         "ingredients": [
                             {"id": r["id"], "name": r["name"]} for r in cached_rows
                         ]
                     }
-                except Exception as e:
-                    print(f"[ingredients] cache read failed: {e}")
+                except Exception:
+                    pass  # cache read failure — fall through to fetch
         except (ValueError, KeyError):
             pass  # unparseable timestamp — fall through to fetch
 
     # ── Step 2: fetch from LogMeal ────────────────────────────────────────────
-    print("ingredient cache miss — fetching from LogMeal")
     api_key = get_logmeal_key()
 
     try:
@@ -510,8 +486,8 @@ async def get_ingredients(
             rows_to_insert.append(row)
         if rows_to_insert:
             supabase.table("ingredient_cache").insert(rows_to_insert).execute()
-    except Exception as e:
-        print(f"[ingredients] cache write failed: {e} — returning fetched data anyway")
+    except Exception:
+        pass  # cache write failure must not block the response
 
     # ── Step 4: return ────────────────────────────────────────────────────────
     return {
@@ -619,6 +595,4 @@ async def compute_nutrients(
             },
         )
 
-    data = response.json()
-    print(f"[compute_nutrients DEBUG] response keys={list(data.keys()) if isinstance(data, dict) else type(data)} body={str(data)[:500]}")
-    return data
+    return response.json()

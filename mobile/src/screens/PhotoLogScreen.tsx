@@ -257,8 +257,7 @@ export default function PhotoLogScreen() {
       regions.forEach((_, idx) => { done[idx] = 'done' })
       setRegionStatus(done)
       return true
-    } catch (err) {
-      console.error('[PhotoLog] confirm all regions failed:', err)
+    } catch {
       const error: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {}
       regions.forEach((_, idx) => { error[idx] = 'error' })
       setRegionStatus(error)
@@ -280,8 +279,7 @@ export default function PhotoLogScreen() {
         ? res.data.serving_size
         : 100
       setServingInput(String(initialGrams))
-    } catch (err) {
-      console.error('[PhotoLog] nutrition fetch failed:', err)
+    } catch {
       setNutritionError('Could not load nutrition information — please try again')
     } finally {
       setNutritionLoading(false)
@@ -344,8 +342,7 @@ export default function PhotoLogScreen() {
       resetPhotoLogState()
       setScreen({ phase: 'entry' })
       navigation.navigate('Diary' as never)
-    } catch (err) {
-      console.error('[PhotoLog] save diary failed:', err)
+    } catch {
       setSaveError('Could not save to diary — please try again')
     } finally {
       setSaving(false)
@@ -400,14 +397,12 @@ export default function PhotoLogScreen() {
       })
     } catch (err) {
       clearTimeout(timeoutId)
-      console.error('[PhotoLog] upload fetch error:', err)
       if (err instanceof Error && err.name === 'AbortError') throw new UploadError('timeout')
       throw new UploadError('network')
     }
     clearTimeout(timeoutId)
 
     if (!res.ok) {
-      console.error('[PhotoLog] upload HTTP error:', res.status)
       throw new UploadError('http', res.status)
     }
 
@@ -908,7 +903,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(12, 20, 38, 0.45)',
+    backgroundColor: colors.loadingImageOverlay,
     borderRadius: 12,
   },
   loadingText: {
