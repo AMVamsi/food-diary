@@ -39,7 +39,7 @@ interface RecognitionCandidate {
 }
 
 interface SegmentationRegion {
-  id: number
+  food_item_position: number
   contained_bbox: { x: number; y: number; w: number; h: number }
   recognition_results: RecognitionCandidate[]
 }
@@ -89,8 +89,8 @@ interface NutritionResponse {
 
 function extractKcal(bag: NutrientBag | undefined): number {
   const k =
-    bag?.totalNutritients?.ENERC_KCAL?.quantity ??
-    bag?.totalNutrients?.ENERC_KCAL?.quantity
+    bag?.totalNutrients?.ENERC_KCAL?.quantity ??
+    bag?.totalNutritients?.ENERC_KCAL?.quantity
   return typeof k === 'number' ? k : 0
 }
 
@@ -241,8 +241,7 @@ export default function PhotoLogScreen() {
     // LogMeal /confirm/dish wants a regionId. Prefer the API-supplied
     // region.id when present, otherwise fall back to the array index +1
     // (LogMeal regionIds are 1-based when they do appear).
-    const apiRegionId =
-      typeof region.id === 'number' ? region.id : regionIndex + 1
+    const apiRegionId = region.food_item_position
     setRegionStatus((s) => ({ ...s, [regionIndex]: 'pending' }))
     try {
       await client.post<ConfirmResponse>('/logmeal/confirm', {
