@@ -35,8 +35,8 @@ Railway redeploy required to activate new /logmeal endpoints, POST /diary, GET /
 | #16 | Manual log screen | ✅ done |
 | #17 | FastAPI diary router | ✅ done — Railway redeploy required |
 | #18 | Diary screen | ✅ done |
-| #19 | API error handling | ⬜ not started |
-| #20 | Image upload to Supabase Storage | ⬜ not started |
+| #19 | API error handling | ✅ done |
+| #20 | Image upload to Supabase Storage | ✅ done |
 | #21 | EAS build — APK | ⬜ not started |
 | #22 | README + architecture docs | ⬜ not started |
 | #23 | Finalise AI_USAGE.md | ⬜ not started |
