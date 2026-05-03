@@ -2,14 +2,28 @@
   "expo": {
     "name": "Food Diary",
     "slug": "food-diary",
-    "version": "1.0.0",
+    "version": "1.0.0-beta",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0c1426"
+    },
     "android": {
       "package": "com.fooddiary.app",
-      "versionCode": 1
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0c1426"
+      }
     },
     "ios": {
-      "bundleIdentifier": "com.fooddiary.app"
+      "bundleIdentifier": "com.fooddiary.app",
+      "icon": "./assets/icon.png"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {

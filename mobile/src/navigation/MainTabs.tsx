@@ -1,5 +1,6 @@
 import React from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { Feather } from '@expo/vector-icons'
 import DiaryScreen from '../screens/DiaryScreen'
 import PhotoLogScreen from '../screens/PhotoLogScreen'
 import ManualLogScreen from '../screens/ManualLogScreen'
@@ -42,10 +43,26 @@ export default function MainTabs() {
               fontWeight: '500',
             },
           }}>
-            <Tab.Screen name="Diary" component={DiaryScreen} />
-            <Tab.Screen name="Photo Log" component={PhotoLogScreen} />
-            <Tab.Screen name="Manual Log" component={ManualLogScreen} />
-            <Tab.Screen name="Profile" component={ProfileScreen} />
+            <Tab.Screen
+                name="Diary"
+                component={DiaryScreen}
+                options={{ tabBarIcon: ({ color, size }) => <Feather name="book-open" size={size} color={color} /> }}
+            />
+            <Tab.Screen
+                name="Photo Log"
+                component={PhotoLogScreen}
+                options={{ tabBarIcon: ({ color, size }) => <Feather name="camera" size={size} color={color} /> }}
+            />
+            <Tab.Screen
+                name="Manual Log"
+                component={ManualLogScreen}
+                options={{ tabBarIcon: ({ color, size }) => <Feather name="edit-2" size={size} color={color} /> }}
+            />
+            <Tab.Screen
+                name="Profile"
+                component={ProfileScreen}
+                options={{ tabBarIcon: ({ color, size }) => <Feather name="user" size={size} color={color} /> }}
+            />
         </Tab.Navigator>
     )
 }
