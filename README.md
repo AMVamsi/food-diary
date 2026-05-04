@@ -102,13 +102,13 @@ AI-powered mobile food diary. Users log meals by photographing food or searching
 
 ## APK
 
-[APK download — link to be added after EAS build]
+[APK download --> (https://expo.dev/accounts/amvamsi/projects/food-diary/builds/be5696b1-41d5-4cff-9660-075da7451c98)]
 
 To install: enable "Install unknown apps" for your browser or file manager in Android Settings, open the downloaded APK file, and tap Install. Requires Android 10 (API 29) or later. The Food Diary icon will appear on your home screen after installation.
 
 ## Demo video
 
-[Demo video — link to be added]
+[Demo video](demos/food_diary_Demo.mp4)
 
 Demonstrates account creation, photo meal logging, manual meal logging, and diary view on the installed APK.
 
