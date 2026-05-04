@@ -1,130 +1,185 @@
 # Food Diary
 
-AI-powered mobile food diary. Users log meals by photographing food or searching ingredients manually. The app uses the LogMeal API for food recognition and nutrition data.
+> AI-powered mobile food diary — photograph a meal to identify it, or search ingredients manually. Built with React Native, FastAPI, and the LogMeal food recognition API.
 
+[![AI Usage Check](https://github.com/AMVamsi/food-diary/actions/workflows/ai-usage-check.yml/badge.svg)](https://github.com/AMVamsi/food-diary/actions/workflows/ai-usage-check.yml)
+![Android](https://img.shields.io/badge/Android-API_29%2B-3DDC84?logo=android&logoColor=white)
+![iOS](https://img.shields.io/badge/iOS-cross--platform_code-000000?logo=apple&logoColor=white)
+
+![React Native](https://img.shields.io/badge/React_Native-0.76-20232A?logo=react&logoColor=61DAFB)
+![Expo](https://img.shields.io/badge/Expo-SDK_54-000020?logo=expo&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![React Navigation](https://img.shields.io/badge/React_Navigation-v6-6B52AE?logoColor=white)
+![Zustand](https://img.shields.io/badge/Zustand-state-433E38?logoColor=white)
+
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
+![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-containerised-2496ED?logo=docker&logoColor=white)
+
+![Supabase](https://img.shields.io/badge/Supabase-Auth_%26_DB-3ECF8E?logo=supabase&logoColor=white)
+![Railway](https://img.shields.io/badge/Railway-deployed-0B0D0E?logo=railway&logoColor=white)
+
+---
+
+## What it does
+
+Food Diary lets users track daily calorie intake through two logging flows:
+
+- **Photo log** — take a photo or pick one from the gallery. The image is sent to the LogMeal segmentation API, which returns bounding boxes and top-5 dish candidates for each detected food region. Users confirm (or correct) each region, edit the serving size in grams, and kcal updates instantly without an extra API call.
+- **Manual log** — search a locally cached ingredient catalogue (≈3 000 items), add ingredients to a basket, set grams per item, and compute total kcal in one call.
+
+All entries are stored in a date-grouped diary with per-day kcal totals, photo thumbnails, and swipe-to-delete. An optional profile screen tracks weight, height, goal, and dietary preference, with live BMI calculation.
+
+---
+
+## Architecture
+
+```
+Android App  (Expo / React Native + TypeScript)
+      │
+      │  HTTPS + Bearer JWT
+      ▼
+FastAPI  (Railway)  ─────────────────────────────┐
+  ├── /auth       →  Supabase Auth               │
+  ├── /profile    →  Supabase Postgres            │
+  ├── /diary      →  Supabase Postgres            │
+  └── /logmeal/*  →  LogMeal API  (key server-side only)
+                                                  │
+                     Supabase Storage  ◄──────────┘
+                     (meal-images bucket — public URL
+                      stored in diary_entries.image_url)
+```
+
+The mobile app never calls LogMeal directly. The `LOGMEAL_API_KEY` lives only in Railway environment variables and is never shipped in the APK.
+
+---
 
 ## Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| Mobile | React Native + Expo SDK 54 | Android app |
-| Backend | Python 3.12, FastAPI | API server, LogMeal proxy |
-| Database | Supabase Postgres | Profiles, diary entries, ingredient cache |
-| Auth | Supabase Auth | JWT-based authentication |
-| Storage | Supabase Storage | Meal image storage |
-| AI | LogMeal API | Food recognition and nutrition data |
-| Deployment | Railway (backend), EAS Build (APK) | Cloud hosting, APK distribution |
+| Layer | Technology |
+|---|---|
+| Mobile | React Native, Expo SDK 54, TypeScript (strict) |
+| State | Zustand — one store per domain |
+| Backend | Python 3.12, FastAPI 0.115, httpx async |
+| Database | Supabase Postgres (profiles, diary entries, ingredient cache) |
+| Auth | Supabase Auth — JWT, OTP email verification, auto-refresh |
+| Storage | Supabase Storage — meal-images bucket |
+| AI | LogMeal API — food segmentation, confirmation, nutrition |
+| Deployment | Railway (backend), EAS Build (Android APK) |
 
-## Prerequisites
+---
 
-| Tool | Version | Install |
-|---|---|---|
-| Python | 3.12 | https://python.org/downloads |
-| Node.js | ≥20 | https://nodejs.org |
-| Expo CLI | latest | `npm install -g expo-cli` |
-| EAS CLI | latest | `npm install -g eas-cli` |
+## Getting started
 
-## Backend setup
+### Prerequisites
 
-1. Clone the repository and move to the backend directory:
-   ```
-   git clone <repo-url>
-   cd food-diary/backend
-   ```
+| Tool | Version |
+|---|---|
+| Python | 3.12 |
+| Node.js | ≥ 20 |
+| EAS CLI | latest — `npm install -g eas-cli` |
 
-2. Create and activate a virtual environment:
-   ```bash
-   # macOS / Linux
-   python3 -m venv .venv
-   source .venv/bin/activate
+### Backend
 
-   # Windows
-   python -m venv .venv
-   .venv\Scripts\activate
-   ```
+```bash
+cd backend
+python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env          # fill in the three variables below
+uvicorn app.main:app --reload
+```
 
-3. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
+Confirm it is running:
 
-4. Copy the example env file and fill in the three required values:
-   ```
-   cp .env.example .env
-   ```
+```bash
+curl http://127.0.0.1:8000/health
+# {"status":"ok"}
+```
 
-5. Start the server:
-   ```
-   uvicorn app.main:app --reload
-   ```
+### Mobile
 
-6. Verify the server is running:
-   ```
-   curl http://127.0.0.1:8000/health
-   # expected: {"status":"ok"}
-   ```
+```bash
+cd mobile
+npm install
+```
 
-## Mobile setup
+Create `mobile/.env`:
 
-1. Move to the mobile directory and install dependencies:
-   ```
-   cd food-diary/mobile
-   npm install
-   ```
+```
+EXPO_PUBLIC_API_URL=https://food-diary-production-cd15.up.railway.app
+```
 
-2. Create a `.env` file in `mobile/` and set the backend URL:
-   ```
-   EXPO_PUBLIC_API_URL=https://food-diary-production-cd15.up.railway.app
-   ```
+Start the dev server and press `a` to open on an Android device or emulator:
 
-3. Start the development server:
-   ```
-   npx expo start
-   ```
+```bash
+npx expo start
+```
 
-4. Press `a` to open the app on an Android emulator or connected device.
+---
 
 ## Environment variables
 
-### backend/.env
+### `backend/.env`
 
-| Variable | Required | Description |
-|---|---|---|
-| `SUPABASE_URL` | Yes | Supabase project URL |
-| `SUPABASE_SECRET_KEY` | Yes | Supabase service role secret key (backend only — never in mobile) |
-| `LOGMEAL_API_KEY` | Yes | LogMeal API bearer token |
+| Variable | Description |
+|---|---|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SECRET_KEY` | Service role key — **backend only, never in mobile** |
+| `LOGMEAL_API_KEY` | LogMeal API bearer token — **backend only, never in mobile** |
 
-### mobile/.env
+### `mobile/.env`
 
-| Variable | Required | Description |
-|---|---|---|
-| `EXPO_PUBLIC_API_URL` | Yes | FastAPI backend base URL |
+| Variable | Description |
+|---|---|
+| `EXPO_PUBLIC_API_URL` | FastAPI backend base URL |
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL (for client-side session refresh) |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (public — safe in mobile) |
+
+---
 
 ## APK
 
-[APK download --> (https://expo.dev/accounts/amvamsi/projects/food-diary/builds/be5696b1-41d5-4cff-9660-075da7451c98)]
+[**Download APK**](https://expo.dev/accounts/amvamsi/projects/food-diary/builds/be5696b1-41d5-4cff-9660-075da7451c98)
 
-To install: enable "Install unknown apps" for your browser or file manager in Android Settings, open the downloaded APK file, and tap Install. Requires Android 10 (API 29) or later. The Food Diary icon will appear on your home screen after installation.
+Requires Android 10 (API 29) or later. To install: go to **Settings → Apps → Special app access → Install unknown apps**, enable installation from your browser or file manager, open the APK, and tap Install.
 
-## Demo video
+---
 
-[Demo video](demos/food_diary_Demo.mp4)
+## Demo
 
-Demonstrates account creation, photo meal logging, manual meal logging, and diary view on the installed APK.
+https://www.youtube.com/watch?v=bUg6UNzSWow
+
+---
 
 ## Repository structure
 
 ```
 food-diary/
-├── backend/      FastAPI application — API server and LogMeal proxy
-├── mobile/       Expo React Native application — Android app
-├── docs/         Architecture documentation and user manual
-├── .github/      GitHub Actions workflows and Copilot instructions
-└── .githooks/    Pre-commit AI usage guardrail
+├── backend/          FastAPI — auth, profile, diary, LogMeal proxy
+│   ├── app/
+│   │   ├── routers/  auth.py  profile.py  diary.py  logmeal.py
+│   │   ├── models/   schemas.py
+│   │   ├── middleware/auth_guard.py
+│   │   └── db/       supabase.py
+│   └── Dockerfile
+├── mobile/           Expo React Native — Android app
+│   └── src/
+│       ├── screens/  PhotoLogScreen  ManualLogScreen  DiaryScreen  ProfileScreen
+│       ├── components/BboxOverlay  Toast  Button  Input  PickerField
+│       ├── store/    auth.ts  diary.ts
+│       ├── api/      client.ts
+│       └── theme/    colors  spacing  typography
+├── docs/             Architecture and user manual
+├── .github/          CI workflow and Copilot instructions
+└── .githooks/        Pre-commit AI usage guardrail
 ```
 
-## Links
+---
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [User manual](docs/USER_MANUAL.md)
-- [AI usage disclosure](AI_USAGE.md)
+## Docs
+
+- [Architecture](docs/ARCHITECTURE.md) — system diagram, API reference, caching and auth design
+- [User manual](docs/USER_MANUAL.md) — step-by-step guide for all five flows
+- [AI usage disclosure](AI_USAGE.md) — full record of AI-assisted and manual changes
+- [Known limitations](LIMITATIONS.md) — free-tier constraints and deliberate design choices
