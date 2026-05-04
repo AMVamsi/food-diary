@@ -1,10 +1,26 @@
 # AI Usage Disclosure
 
-This file records all changes — AI-assisted and manual — for every commit.
-The pre-commit hook verifies that an entry matching the commit's [log:slug] token exists.
+This file records every use of AI assistance across the project.
 
-For AI entries: fill all columns.
-For manual entries: use slug `manual`, set Tool=manual.
+A pre-commit hook and GitHub Actions workflow enforce that an entry exists for each commit before it can be pushed.
+
+---
+
+## Tools Used
+
+Three AI tools were used across distinct phases of the project.
+Each served a specific role and no tool was used as a substitute
+for engineering judgement - all outputs were reviewed, tested,
+and modified before being accepted into the codebase.
+
+| Tool | Role | How it was used |
+|------|------|-----------------|
+| **Perplexity** | Research | Used during the planning phase to research API documentation, cross-reference LogMeal endpoint behaviour, and verify Supabase and Railway configuration options against current documentation. Not used for any code generation. |
+| **Claude (Anthropic)** | Planning and architecture | Used to analyse the scope of the features, define the system architecture, design the development workflow, draft GitHub issues, and structure documentation. All architectural decisions were evaluated and confirmed manually before implementation began. |
+| **GitHub Copilot (GPT-4o / Sonnet / Codex)** | Implementation assistance | Used for code generation, scaffolding, and automated PR review across backend and mobile implementation. Every suggestion was read in full, tested against the running application, and modified where needed before acceptance. Copilot PR review was enforced on every pull request via branch protection rules. |
+
+The commit-level entries in the table below record which specific files
+each tool contributed to, what was generated, and how the output was verified.
 
 ---
 
@@ -77,3 +93,4 @@ For manual entries: use slug `manual`, set Tool=manual.
 | update-docs | 2026-05-04 | Claude (claude-sonnet-4-6) | #23 | DEV_LOG.md, AI_USAGE.md | DEV_LOG restructured into 5 dated entries — Day 2 split into Day 2 (2026-05-01 #8–#12), Day 3 (2026-05-02 #13–#16), Day 4 (2026-05-03 #17–#20 + APK); Day 1 corrected to end at #7; AI_USAGE.md all rows reviewed — garbled file paths corrected, incomplete "how verified" fields completed, vague "what was generated" descriptions made specific, three unmatched slugs (logmeal-status, audit-backend, audit-mobile) noted with codebase confirmation | Cross-referenced every entry against `git log --format="%h %ai %s"` for commit timestamps; DEV_LOG dates verified per git history; AI_USAGE entry improvements verified against source files and git log | Factual corrections only — all content derived from git history, source files, and existing AI_USAGE entries; no content invented |
 | toggle-UX | 2026-05-04 | manual | — | mobile/src/screens/ManualLogScreen.tsx | included a toggle option to select/unselect items from the search option for better UX experience | manually verified behaviour on device | replaced the static select option |
 | ci-auto-pass | 2026-05-04 | manual | — | .github/workflows/ai-usage-check.yml | added auto-pass pattern for direct file-update commits (GitHub web editor "Update *.md" style) so they are skipped without requiring a [log:slug] token | CI check re-run passed after pattern added | — |
+| demo | 2026-05-04 | manual | — | demos/**; | added [DEMO](demos/food_diary_Demo.mp4) | - | - |
