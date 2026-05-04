@@ -5,9 +5,6 @@ A mobile food diary application for tracking daily meal intake.
 Users log meals either by photographing food or searching ingredients manually.
 The app uses the LogMeal API for AI-powered food recognition and nutrition data.
 
-Built as a take-home task for a Research Software Engineer position at the
-AI in Health and Nutrition Lab.
-
 ---
 
 ## Users and flows
@@ -114,9 +111,13 @@ CREATE TABLE diary_entries (
 );
 
 CREATE TABLE ingredient_cache (
-  id           integer PRIMARY KEY,
-  name         text NOT NULL,
-  fetched_at   timestamptz NOT NULL
+  id              integer PRIMARY KEY,
+  name            text NOT NULL,
+  fetched_at      timestamptz NOT NULL,
+  avg_quantity    float,        -- written when present in LogMeal response
+  modifier_type   text,         -- written when present in LogMeal response
+  state           text,         -- written when present in LogMeal response
+  unit            text          -- written when present in LogMeal response
 );
 ```
 

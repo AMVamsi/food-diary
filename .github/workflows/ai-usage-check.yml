@@ -85,6 +85,13 @@ jobs:
               continue
             fi
 
+            # Auto-pass: direct file-update commits from the GitHub web editor
+            # (e.g. "Update PROJECT_STATE.md", "Update README.md")
+            if echo "$MSG" | grep -qiE "^Update [^ ]"; then
+              echo "OK   [$HASH]: direct file update — skipped"
+              continue
+            fi
+
             # ── Require [log:slug] for all other commits ───────────────
             SLUG=$(echo "$MSG" | \
               grep -oE '\[log:[a-zA-Z0-9_-]+\]' | head -1 | \
