@@ -20,34 +20,34 @@
  *  not the original/parsed image size."
  */
 
-import React from 'react'
-import { View, Image, StyleSheet } from 'react-native'
-import Svg, { Rect, G, Text as SvgText } from 'react-native-svg'
-import { colors } from '../theme/colors'
+import React from 'react';
+import { View, Image, StyleSheet } from 'react-native';
+import Svg, { Rect, G, Text as SvgText } from 'react-native-svg';
+import { colors } from '../theme/colors';
 
-const strokeColor = colors.gradientEnd
-const labelBg = 'rgba(6, 182, 212, 0.85)'   // semi-transparent gradientEnd — SVG fill needs string literal
-const labelText = colors.bgGradientStart     // dark bg color — ensures readable contrast on cyan label
+const strokeColor = colors.gradientEnd;
+const labelBg = 'rgba(6, 182, 212, 0.85)'; // semi-transparent gradientEnd — SVG fill needs string literal
+const labelText = colors.bgGradientStart; // dark bg color — ensures readable contrast on cyan label
 
 interface Region {
-  contained_bbox: { x: number; y: number; w: number; h: number }
-  recognition_results: Array<{
-    name: string
-    prob: number
-  }>
+  contained_bbox: { x: number; y: number; w: number; h: number };
+  recognition_results: {
+    name: string;
+    prob: number;
+  }[];
 }
 
 interface ProcessedImageSize {
-  width: number
-  height: number
+  width: number;
+  height: number;
 }
 
 interface BboxOverlayProps {
-  imageUri: string
-  displayWidth: number
-  displayHeight: number
-  processedImageSize: ProcessedImageSize
-  regions: Region[]
+  imageUri: string;
+  displayWidth: number;
+  displayHeight: number;
+  processedImageSize: ProcessedImageSize;
+  regions: Region[];
 }
 
 export default function BboxOverlay({
@@ -57,7 +57,7 @@ export default function BboxOverlay({
   processedImageSize,
   regions,
 }: BboxOverlayProps) {
-  const hasRegions = regions != null && regions.length > 0
+  const hasRegions = regions != null && regions.length > 0;
 
   return (
     <View style={[styles.container, { width: displayWidth, height: displayHeight }]}>
@@ -75,39 +75,38 @@ export default function BboxOverlay({
           style={StyleSheet.absoluteFill}
         >
           {regions.map((region, index) => {
-            const bbox = region.contained_bbox
-            if (!bbox || typeof bbox !== 'object') return null
+            const bbox = region.contained_bbox;
+            if (!bbox || typeof bbox !== 'object') return null;
 
-            const scaleX = displayWidth / processedImageSize.width
-            const scaleY = displayHeight / processedImageSize.height
+            const scaleX = displayWidth / processedImageSize.width;
+            const scaleY = displayHeight / processedImageSize.height;
 
-            const { x: bx, y: by, w: bw, h: bh } = bbox
+            const { x: bx, y: by, w: bw, h: bh } = bbox;
 
-            const screenX = bx * scaleX
-            const screenY = by * scaleY
-            const screenW = bw * scaleX
-            const screenH = bh * scaleY
+            const screenX = bx * scaleX;
+            const screenY = by * scaleY;
+            const screenW = bw * scaleX;
+            const screenH = bh * scaleY;
 
-            const topName = region.recognition_results?.[0]?.name ?? 'Unknown'
-            const displayName =
-              topName.length > 20 ? topName.substring(0, 20) + '…' : topName
+            const topName = region.recognition_results?.[0]?.name ?? 'Unknown';
+            const displayName = topName.length > 20 ? topName.substring(0, 20) + '…' : topName;
 
-            const labelWidth = Math.min(screenW, displayName.length * 7 + 16)
+            const labelWidth = Math.min(screenW, displayName.length * 7 + 16);
 
-            let labelBgY: number
-            let labelTextY: number
+            let labelBgY: number;
+            let labelTextY: number;
             if (screenY >= 26) {
               // Tier 1: label above the box
-              labelBgY = screenY - 24
-              labelTextY = screenY - 8
+              labelBgY = screenY - 24;
+              labelTextY = screenY - 8;
             } else if (screenH >= 36) {
               // Tier 2: label inside the box at the top
-              labelBgY = screenY + 4
-              labelTextY = screenY + 18
+              labelBgY = screenY + 4;
+              labelTextY = screenY + 18;
             } else {
               // Tier 3: label below the box (small box near top edge)
-              labelBgY = screenY + screenH + 2
-              labelTextY = screenY + screenH + 16
+              labelBgY = screenY + screenH + 2;
+              labelTextY = screenY + screenH + 16;
             }
 
             return (
@@ -140,16 +139,16 @@ export default function BboxOverlay({
                   {displayName}
                 </SvgText>
               </G>
-            )
+            );
           })}
         </Svg>
       )}
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
   },
-})
+});

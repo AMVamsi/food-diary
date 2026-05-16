@@ -38,11 +38,11 @@ def get_current_user(authorization: str = Header(None)):
         return response.user
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=401,
             detail={
                 "error": "Invalid or expired session",
                 "detail": "Invalid or expired session — please log in again",
             },
-        )
+        ) from None

@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.routers import auth, profile, diary, logmeal
+
+from app.routers import auth, diary, logmeal, profile
 
 app = FastAPI(title="Food Diary API")
 

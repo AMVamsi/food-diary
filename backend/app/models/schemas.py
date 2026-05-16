@@ -1,4 +1,5 @@
-from typing import List, Literal, Optional
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
@@ -34,38 +35,38 @@ class ErrorResponse(BaseModel):
 class ProfileIn(BaseModel):
     """Partial profile update payload — all fields optional, only provided fields are written."""
 
-    age: Optional[int] = None
-    sex: Optional[str] = None
-    weight_kg: Optional[float] = None
-    height_cm: Optional[float] = None
-    goal: Optional[str] = None
-    dietary_preference: Optional[str] = None
-    activity_level: Optional[str] = None
+    age: int | None = None
+    sex: str | None = None
+    weight_kg: float | None = None
+    height_cm: float | None = None
+    goal: str | None = None
+    dietary_preference: str | None = None
+    activity_level: str | None = None
 
     @field_validator("age")
     @classmethod
-    def age_positive(cls, v: Optional[int]) -> Optional[int]:
+    def age_positive(cls, v: int | None) -> int | None:
         if v is not None and v <= 0:
             raise ValueError("age must be greater than 0")
         return v
 
     @field_validator("weight_kg")
     @classmethod
-    def weight_positive(cls, v: Optional[float]) -> Optional[float]:
+    def weight_positive(cls, v: float | None) -> float | None:
         if v is not None and v <= 0:
             raise ValueError("weight_kg must be greater than 0")
         return v
 
     @field_validator("height_cm")
     @classmethod
-    def height_positive(cls, v: Optional[float]) -> Optional[float]:
+    def height_positive(cls, v: float | None) -> float | None:
         if v is not None and v <= 0:
             raise ValueError("height_cm must be greater than 0")
         return v
 
     @field_validator("sex")
     @classmethod
-    def sex_valid(cls, v: Optional[str]) -> Optional[str]:
+    def sex_valid(cls, v: str | None) -> str | None:
         allowed = ["male", "female", "other"]
         if v is not None and v not in allowed:
             raise ValueError(f"sex '{v}' is not valid; allowed values: {allowed}")
@@ -73,7 +74,7 @@ class ProfileIn(BaseModel):
 
     @field_validator("goal")
     @classmethod
-    def goal_valid(cls, v: Optional[str]) -> Optional[str]:
+    def goal_valid(cls, v: str | None) -> str | None:
         allowed = ["weight_loss", "muscle_gain", "being_healthier", "other"]
         if v is not None and v not in allowed:
             raise ValueError(f"goal '{v}' is not valid; allowed values: {allowed}")
@@ -81,7 +82,7 @@ class ProfileIn(BaseModel):
 
     @field_validator("dietary_preference")
     @classmethod
-    def dietary_preference_valid(cls, v: Optional[str]) -> Optional[str]:
+    def dietary_preference_valid(cls, v: str | None) -> str | None:
         allowed = ["unrestricted", "vegan", "vegetarian", "pescetarian"]
         if v is not None and v not in allowed:
             raise ValueError(
@@ -91,7 +92,7 @@ class ProfileIn(BaseModel):
 
     @field_validator("activity_level")
     @classmethod
-    def activity_level_valid(cls, v: Optional[str]) -> Optional[str]:
+    def activity_level_valid(cls, v: str | None) -> str | None:
         allowed = ["sedentary", "lightly_active", "moderately_active", "very_active"]
         if v is not None and v not in allowed:
             raise ValueError(
@@ -106,16 +107,16 @@ class ProfileOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     user_id: str
-    age: Optional[int] = None
-    sex: Optional[str] = None
-    weight_kg: Optional[float] = None
-    height_cm: Optional[float] = None
-    goal: Optional[str] = None
-    dietary_preference: Optional[str] = None
-    activity_level: Optional[str] = None
-    bmi: Optional[float] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    age: int | None = None
+    sex: str | None = None
+    weight_kg: float | None = None
+    height_cm: float | None = None
+    goal: str | None = None
+    dietary_preference: str | None = None
+    activity_level: str | None = None
+    bmi: float | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class OtpVerifyRequest(BaseModel):
@@ -142,10 +143,10 @@ class DiaryEntryIn(BaseModel):
     kcal: float = Field(..., ge=0)
     amount: float = Field(..., gt=0)
     unit: Literal["g", "ml"] = "g"
-    occasion: Optional[Literal["breakfast", "lunch", "dinner", "snack"]] = None
-    image_url: Optional[str] = None
-    logged_at: Optional[str] = None
-    notes: Optional[str] = None
+    occasion: Literal["breakfast", "lunch", "dinner", "snack"] | None = None
+    image_url: str | None = None
+    logged_at: str | None = None
+    notes: str | None = None
 
 
 class DiaryEntryOut(BaseModel):
@@ -159,11 +160,11 @@ class DiaryEntryOut(BaseModel):
     food_name: str
     kcal: float
     amount: float
-    unit: Optional[str] = None
-    occasion: Optional[str] = None
-    image_url: Optional[str] = None
-    logged_at: Optional[str] = None
-    notes: Optional[str] = None
+    unit: str | None = None
+    occasion: str | None = None
+    image_url: str | None = None
+    logged_at: str | None = None
+    notes: str | None = None
 
 
 class DiaryDayOut(BaseModel):
@@ -171,4 +172,4 @@ class DiaryDayOut(BaseModel):
 
     date: str
     total_kcal: float
-    entries: List[DiaryEntryOut]
+    entries: list[DiaryEntryOut]

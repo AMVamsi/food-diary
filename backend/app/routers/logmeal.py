@@ -1,9 +1,10 @@
-import uuid
-from datetime import datetime, timedelta, timezone
-
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-import httpx
 import os
+import uuid
+from datetime import UTC, datetime, timedelta
+
+import httpx
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+
 from app.db.supabase import supabase
 from app.middleware.auth_guard import get_current_user
 
@@ -24,7 +25,6 @@ def get_logmeal_key() -> str:
             },
         )
     return key
-
 
 
 @router.post("/segment")
@@ -127,7 +127,7 @@ async def segment_image(
                 "error": "Request timed out",
                 "detail": "The food recognition service took too long to respond. Please try again.",
             },
-        )
+        ) from None
     except httpx.RequestError as exc:
         raise HTTPException(
             status_code=502,
@@ -135,7 +135,7 @@ async def segment_image(
                 "error": "Service unreachable",
                 "detail": str(exc),
             },
-        )
+        ) from exc
 
     # Upload image to Supabase Storage. Failure must not block the response.
     image_url: str | None = None
@@ -178,12 +178,18 @@ async def confirm_dish(
     if not isinstance(food_positions, list) or not isinstance(confirmed_classes, list):
         raise HTTPException(
             status_code=400,
-            detail={"error": "Invalid payload", "detail": "food_item_position and confirmedClass must be arrays"},
+            detail={
+                "error": "Invalid payload",
+                "detail": "food_item_position and confirmedClass must be arrays",
+            },
         )
     if len(food_positions) == 0 or len(food_positions) != len(confirmed_classes):
         raise HTTPException(
             status_code=400,
-            detail={"error": "Invalid payload", "detail": "food_item_position and confirmedClass must be non-empty arrays of equal length"},
+            detail={
+                "error": "Invalid payload",
+                "detail": "food_item_position and confirmedClass must be non-empty arrays of equal length",
+            },
         )
 
     logmeal_payload = {
@@ -249,7 +255,7 @@ async def confirm_dish(
                 "error": "Request timed out",
                 "detail": "The food confirmation service timed out. Please try again.",
             },
-        )
+        ) from None
     except httpx.RequestError as exc:
         raise HTTPException(
             status_code=502,
@@ -257,7 +263,7 @@ async def confirm_dish(
                 "error": "Service unreachable",
                 "detail": str(exc),
             },
-        )
+        ) from exc
 
 
 @router.post("/nutrition")
@@ -338,7 +344,7 @@ async def get_nutritional_info(
                 "error": "Request timed out",
                 "detail": "Nutrition lookup timed out. Please try again.",
             },
-        )
+        ) from None
     except httpx.RequestError as exc:
         raise HTTPException(
             status_code=502,
@@ -346,7 +352,7 @@ async def get_nutritional_info(
                 "error": "Service unreachable",
                 "detail": str(exc),
             },
-        )
+        ) from exc
 
 
 @router.get("/ingredients")
@@ -379,19 +385,13 @@ async def get_ingredients(
         try:
             fetched_dt = datetime.fromisoformat(ts)
             if fetched_dt.tzinfo is None:
-                fetched_dt = fetched_dt.replace(tzinfo=timezone.utc)
-            if datetime.now(timezone.utc) - fetched_dt < timedelta(hours=24):
+                fetched_dt = fetched_dt.replace(tzinfo=UTC)
+            if datetime.now(UTC) - fetched_dt < timedelta(hours=24):
                 try:
-                    cache_res = (
-                        supabase.table("ingredient_cache")
-                        .select("id,name")
-                        .execute()
-                    )
+                    cache_res = supabase.table("ingredient_cache").select("id,name").execute()
                     cached_rows: list[dict] = cache_res.data or []
                     return {
-                        "ingredients": [
-                            {"id": r["id"], "name": r["name"]} for r in cached_rows
-                        ]
+                        "ingredients": [{"id": r["id"], "name": r["name"]} for r in cached_rows]
                     }
                 except Exception:
                     pass  # cache read failure — fall through to fetch
@@ -414,7 +414,7 @@ async def get_ingredients(
                 "error": "Request timed out",
                 "detail": "Ingredient catalogue request timed out",
             },
-        )
+        ) from None
     except httpx.RequestError as exc:
         raise HTTPException(
             status_code=502,
@@ -422,7 +422,7 @@ async def get_ingredients(
                 "error": "Service unreachable",
                 "detail": str(exc),
             },
-        )
+        ) from exc
 
     if response.status_code == 401:
         raise HTTPException(
@@ -468,7 +468,7 @@ async def get_ingredients(
         )
 
     # ── Step 3: replace cache ─────────────────────────────────────────────────
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = datetime.now(UTC).isoformat()
     try:
         supabase.table("ingredient_cache").delete().gte("id", 0).execute()
         rows_to_insert: list[dict] = []
@@ -552,7 +552,7 @@ async def compute_nutrients(
                 "error": "Request timed out",
                 "detail": "Nutrition calculation timed out — please try again",
             },
-        )
+        ) from None
     except httpx.RequestError as exc:
         raise HTTPException(
             status_code=502,
@@ -560,7 +560,7 @@ async def compute_nutrients(
                 "error": "Service unreachable",
                 "detail": str(exc),
             },
-        )
+        ) from exc
 
     if response.status_code == 401:
         raise HTTPException(
