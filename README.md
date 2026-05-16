@@ -73,6 +73,14 @@ The mobile app never calls LogMeal directly. The `LOGMEAL_API_KEY` lives only in
 
 ## Getting started
 
+Run the one-shot setup script to wire git hooks, create the Python virtualenv, install mobile dependencies, and validate project files:
+
+```bash
+bash setup.sh
+```
+
+Or set up each part manually:
+
 ### Prerequisites
 
 | Tool | Version |
@@ -173,7 +181,9 @@ food-diary/
 │       └── theme/    colors  spacing  typography
 ├── docs/             Architecture and user manual
 ├── .github/          CI workflow and Copilot instructions
-└── .githooks/        Pre-commit AI usage guardrail
+├── .githooks/        Pre-commit AI usage guardrail
+├── .vscode/          Recommended extensions, workspace settings, and debug configs
+└── setup.sh          One-shot dev environment bootstrap
 ```
 
 ---
