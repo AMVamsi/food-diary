@@ -95,3 +95,4 @@ each tool contributed to, what was generated, and how the output was verified.
 | ci-auto-pass | 2026-05-04 | manual | — | .github/workflows/ai-usage-check.yml | added auto-pass pattern for direct file-update commits (GitHub web editor "Update *.md" style) so they are skipped without requiring a [log:slug] token | CI check re-run passed after pattern added | — |
 | demo | 2026-05-04 | manual | — | demos/**; | added [DEMO](demos/food_diary_Demo.mp4) | - | - |
 | readme | 2026-05-04 | manual | — | README.md; | polished with badges | - | - |
+| license | 2026-05-16 | manual | #57 | LICENSE; README.md; | included license | - | - |

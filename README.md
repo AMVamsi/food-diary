@@ -20,6 +20,7 @@
 ![Supabase](https://img.shields.io/badge/Supabase-Auth_%26_DB-3ECF8E?logo=supabase&logoColor=white)
 ![Railway](https://img.shields.io/badge/Railway-deployed-0B0D0E?logo=railway&logoColor=white)
 
+[![License](https://img.shields.io/badge/license-proprietary-red)]()
 ---
 
 ## What it does
@@ -183,3 +184,7 @@ food-diary/
 - [User manual](docs/USER_MANUAL.md) — step-by-step guide for all five flows
 - [AI usage disclosure](AI_USAGE.md) — full record of AI-assisted and manual changes
 - [Known limitations](LIMITATIONS.md) — free-tier constraints and deliberate design choices
+
+## 📝 License
+
+Proprietary --  All rights reserved by AMVamsi.
