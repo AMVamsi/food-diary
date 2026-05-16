@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  backend:
+    name: Backend — lint & test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install ruff pytest pytest-cov httpx
+          pip install -r backend/requirements.txt
+
+      - name: Ruff lint
+        run: ruff check backend/app/ --config backend/ruff.toml
+
+      - name: Ruff format check
+        run: ruff format --check backend/app/ --config backend/ruff.toml
+
+      - name: pytest with coverage
+        run: pytest backend/tests/ --cov=backend/app --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: backend
+          files: coverage.xml
+
+  mobile:
+    name: Mobile — lint & test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: cd mobile && npm ci
+
+      - name: ESLint
+        run: cd mobile && npx eslint src/ --ext .ts,.tsx --max-warnings 0
+
+      - name: Prettier check
+        run: cd mobile && npx prettier --check "src/**/*.{ts,tsx}"
+
+      - name: Jest with coverage
+        run: cd mobile && npm test -- --coverage --coverageReporters=lcov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: mobile
+          files: mobile/coverage/lcov.info
