@@ -22,6 +22,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         content={"error": "Request failed", "detail": str(exc.detail)},
     )
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

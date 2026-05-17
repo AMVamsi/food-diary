@@ -1,6 +1,7 @@
 {
   "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
   "editor.formatOnSave": true,
+  "ruff.configuration": "${workspaceFolder}/backend/pyproject.toml",
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff"
   },

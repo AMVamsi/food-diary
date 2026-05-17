@@ -85,9 +85,7 @@ class ProfileIn(BaseModel):
     def dietary_preference_valid(cls, v: str | None) -> str | None:
         allowed = ["unrestricted", "vegan", "vegetarian", "pescetarian"]
         if v is not None and v not in allowed:
-            raise ValueError(
-                f"dietary_preference '{v}' is not valid; allowed values: {allowed}"
-            )
+            raise ValueError(f"dietary_preference '{v}' is not valid; allowed values: {allowed}")
         return v
 
     @field_validator("activity_level")
@@ -95,9 +93,7 @@ class ProfileIn(BaseModel):
     def activity_level_valid(cls, v: str | None) -> str | None:
         allowed = ["sedentary", "lightly_active", "moderately_active", "very_active"]
         if v is not None and v not in allowed:
-            raise ValueError(
-                f"activity_level '{v}' is not valid; allowed values: {allowed}"
-            )
+            raise ValueError(f"activity_level '{v}' is not valid; allowed values: {allowed}")
         return v
 
 
