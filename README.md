@@ -100,6 +100,8 @@ cp .env.example .env          # fill in the three variables below
 uvicorn app.main:app --reload
 ```
 
+> `requirements.lock` is the pinned lockfile generated from `requirements.txt`. The Dockerfile uses the lockfile for reproducible builds. To update dependencies: `pip-compile requirements.txt -o requirements.lock`
+
 Confirm it is running:
 
 ```bash

@@ -1,0 +1,33 @@
+[project]
+name = "food-diary-backend"
+version = "1.0.0b1"
+description = "FastAPI backend for the Food Diary AI mobile app"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.115.12",
+    "uvicorn[standard]==0.34.2",
+    "httpx==0.28.1",
+    "python-multipart==0.0.20",
+    "python-dotenv==1.1.0",
+    "supabase==2.15.1",
+    "pydantic[email]==2.11.4",
+    "pytest==8.3.5",
+    "pytest-cov==6.1.0",
+    "pytest-asyncio==0.25.3",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501", "B008"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*"]
