@@ -8,9 +8,16 @@
 **Tool:** [pyinstrument 5.0.1](https://pyinstrument.readthedocs.io/) — statistical wall-clock profiler
 
 ```bash
-# Reproduce
+# Reproduce — pyinstrument HTML report
 python -m pyinstrument -o docs/profiling/segment_profile.html \
     --renderer html backend/profile_run.py
+
+# Reproduce — cProfile + flamegraph.pl SVG (Brendan Gregg format)
+# Requires: pip install flameprof
+#           git clone --depth=1 https://github.com/brendangregg/FlameGraph
+python -m cProfile -o docs/profiling/profile.prof backend/profile_run.py
+flameprof docs/profiling/profile.prof --format log > docs/profiling/profile.folded
+FlameGraph/flamegraph.pl docs/profiling/profile.folded > docs/profiling/flamegraph.svg
 ```
 
 Full request lifecycle from FastAPI handler entry through to JSON response,

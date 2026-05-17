@@ -1,0 +1,365 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="318" onload="init(evt)"
+     viewBox="0 0 1200 318"
+     xmlns="http://www.w3.org/2000/svg">
+<desc>
+  Flame Graph - POST /logmeal/segment (food-diary backend)
+  3547 wall-clock samples at 1 ms per sample - 2026-05-17
+  Tool: pyinstrument 5.0.1 (statistical wall-clock profiler)
+  Scale: 1180 px = 3547 samples (1 px = 3.006 ms)
+  Frame height: 15 px | x margin: 10 px
+  Reproduce:
+    python -m cProfile -o profile.prof backend/profile_run.py
+    flameprof profile.prof -format log &gt; profile.folded
+    flamegraph.pl profile.folded &gt; docs/profiling/flamegraph.svg
+</desc>
+<defs>
+  <linearGradient id="background" y1="0" y2="1" x1="0" x2="0">
+    <stop stop-color="#eeeeee" offset="5%"/>
+    <stop stop-color="#eeeeb0" offset="95%"/>
+  </linearGradient>
+  <clipPath id="textclip">
+    <rect x="0" y="0" width="1200" height="318"/>
+  </clipPath>
+</defs>
+<style type="text/css">
+  text {
+    font-family: Verdana, Helvetica, sans-serif;
+    font-size: 12px;
+    fill: rgb(0,0,0);
+  }
+  #search  { opacity: 0.1; cursor: pointer; }
+  #search:hover  { opacity: 1; }
+  #unzoom  { cursor: pointer; opacity: 0.1; }
+  #unzoom:hover  { opacity: 1; }
+  #title   { text-anchor: middle; font-size: 17px; }
+  #subtitle{ text-anchor: middle; font-size: 10px; fill: rgb(130,130,130); }
+  #details { font-size: 11px; }
+  .func_g rect { fill-opacity: 0.8; }
+  .func_g:hover rect { fill-opacity: 1; stroke: black; stroke-width: 0.5; }
+  .func_g text { clip-path: url(#textclip); pointer-events: none; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+var details, svg;
+function init(evt) {
+  details = document.getElementById("details").firstChild;
+  svg = document.getElementsByTagName("svg")[0];
+  trimLabels();
+}
+function trimLabels() {
+  var gs = svg.querySelectorAll(".func_g");
+  for (var i = 0; i < gs.length; i++) {
+    var r = gs[i].querySelector("rect");
+    var t = gs[i].querySelector("text");
+    if (!r || !t || !t.textContent.trim()) continue;
+    try {
+      if (t.getBBox().width > parseFloat(r.getAttribute("width")) - 6) {
+        t.style.display = "none";
+      }
+    } catch (e) {}
+  }
+}
+function s(node) {
+  var t = node.querySelector("title");
+  if (t) details.nodeValue = t.textContent;
+}
+function c() { details.nodeValue = " "; }
+function qchild(node, sel) {
+  var nl = node.querySelectorAll(sel);
+  return nl.length ? nl[0] : null;
+}
+function save(e, a) {
+  if (!e.hasAttribute("_o_" + a) && e.hasAttribute(a))
+    e.setAttribute("_o_" + a, e.getAttribute(a));
+}
+function load(e, a) {
+  if (e.hasAttribute("_o_" + a)) {
+    e.setAttribute(a, e.getAttribute("_o_" + a));
+    e.removeAttribute("_o_" + a);
+  }
+}
+function walk_reset(n) {
+  if (n.attributes) { load(n, "x"); load(n, "width"); }
+  for (var i = 0; i < n.childNodes.length; i++) walk_reset(n.childNodes[i]);
+}
+function walk_child(n, x0, ratio) {
+  if (n.attributes) {
+    var xa = n.attributes["x"], wa = n.attributes["width"];
+    if (xa) {
+      save(n, "x");
+      xa.value = (parseFloat(xa.value) - x0 - 10) * ratio + 10;
+    }
+    if (wa) { save(n, "width"); wa.value = parseFloat(wa.value) * ratio; }
+    if (xa && n.tagName === "text") {
+      var r = qchild(n.parentNode, "rect");
+      if (r) xa.value = parseFloat(r.getAttribute("x")) + 3;
+    }
+  }
+  for (var i = 0; i < n.childNodes.length; i++) walk_child(n.childNodes[i], x0 - 10, ratio);
+}
+function walk_parent(n) {
+  if (n.attributes) {
+    var svgW = parseInt(svg.getAttribute("width")) - 20;
+    var xa = n.attributes["x"], wa = n.attributes["width"];
+    if (xa) { save(n, "x"); xa.value = 10; }
+    if (wa) { save(n, "width"); wa.value = svgW; }
+  }
+  for (var i = 0; i < n.childNodes.length; i++) walk_parent(n.childNodes[i]);
+}
+function zoom(node) {
+  var r = qchild(node, "rect");
+  if (!r) return;
+  var rx = parseFloat(r.getAttribute("x")),
+      rw = parseFloat(r.getAttribute("width")),
+      ry = parseFloat(r.getAttribute("y")),
+      svgW = parseInt(svg.getAttribute("width")),
+      ratio = (svgW - 20) / rw;
+  document.getElementById("unzoom").style.opacity = "1";
+  var gs = svg.getElementsByTagName("g");
+  for (var i = 0; i < gs.length; i++) {
+    var g = gs[i];
+    if (g.getAttribute("class") !== "func_g") continue;
+    var e = qchild(g, "rect");
+    if (!e) continue;
+    var ex = parseFloat(e.getAttribute("x")),
+        ew = parseFloat(e.getAttribute("width")),
+        ey = parseFloat(e.getAttribute("y"));
+    if (ex <= rx && (ex + ew + 2) >= (rx + rw) && ey <= ry) {
+      walk_parent(g); g.style.opacity = "0.5";
+    } else if (ex < rx + rw && ex + ew > rx && ey > ry) {
+      walk_child(g, rx, ratio); g.style.opacity = "1";
+    } else {
+      g.style.display = "none";
+    }
+  }
+}
+function unzoom() {
+  document.getElementById("unzoom").style.opacity = "0.1";
+  var gs = svg.getElementsByTagName("g");
+  for (var i = 0; i < gs.length; i++) {
+    var g = gs[i];
+    if (g.getAttribute("class") !== "func_g") continue;
+    walk_reset(g);
+    g.style.opacity = "1";
+    g.style.display = "";
+  }
+}
+function search_prompt() {
+  var term = prompt("Search (regexp, e.g. ssl|httpx):", "");
+  if (!term) return;
+  var re = new RegExp(term);
+  var gs = svg.getElementsByTagName("g");
+  for (var i = 0; i < gs.length; i++) {
+    var g = gs[i];
+    if (g.getAttribute("class") !== "func_g") continue;
+    var t = g.querySelector("title"), e = qchild(g, "rect");
+    if (!t || !e) continue;
+    if (t.textContent.match(re)) {
+      save(e, "fill"); e.setAttribute("fill", "rgb(230,0,10)");
+    } else {
+      e.setAttribute("fill", "rgb(200,200,200)");
+    }
+  }
+}
+]]>
+</script>
+
+<rect x="0" y="0" width="1200" height="318" fill="url(#background)"/>
+
+<text id="title"    x="600" y="22">Flame Graph</text>
+<text id="subtitle" x="600" y="36">
+  food-diary &#183; POST /logmeal/segment &#8212; 3,547 samples &#183; wall-clock 1 ms/sample &#183; 2026-05-17
+</text>
+<text id="unzoom" x="10"   y="22" onclick="unzoom()">Reset Zoom</text>
+<text id="search" x="1105" y="22" onclick="search_prompt()">Search</text>
+
+<!--
+  Layout reference (y = top of each 15-px bar; SVG y grows downward;
+  process entry sits at the largest y = visual bottom):
+
+  Layer  y    Description
+    13   46   ssl:SSLSocket.read  [HOTSPOT] + storage recv
+    12   62   httpcore.AsyncHTTP11Connection.handle_async_request
+    11   78   httpx._client.AsyncClient.send (net + storage split)
+    10   94   httpx._client.AsyncClient.post / StorageFileAPI.upload
+     9  110   app.routers.logmeal:segment
+     8  126   fastapi.routing:run_endpoint_function
+     7  142   fastapi.routing:APIRouter.handle
+     6  158   starlette.middleware.base:BaseHTTPMiddleware.__call__
+     5  174   fastapi.applications:FastAPI.__call__
+     4  190   starlette.testclient:_TestClientTransport.handle_request
+     3  206   httpx._client.Client._send_single_request
+     2  222   httpx._client.Client._send_with_response
+     1  238   starlette.testclient:TestClient.post
+     0  254   profile_run.py:1:module  (process entry, full width)
+
+  x-coordinates (scale 1180 px = 3547 samples):
+    full          3547 -> 1180 px   x=10  w=1180
+    TestClient    3390 -> 1128 px   x=10  w=1128   (95.6%)
+    app_startup    157 ->   52 px   x=1138 w=52    ( 4.4%)
+    net_path      3091 -> 1028 px   x=10  w=1028   (87.1%)
+    stor_path      291 ->   97 px   x=1038 w=97    ( 8.2%)
+    ssl_net       3015 -> 1003 px   x=10  w=1003   (85.0%)  HOTSPOT
+    tls_net         76 ->   25 px   x=1013 w=25    ( 2.1%)
+    ssl_stor       218 ->   72 px   x=1038 w=72    ( 6.1%)
+    tls_stor        73 ->   24 px   x=1110 w=24    ( 0.7%)
+-->
+
+<!-- ── Layer 0: process entry ─────────────────────────────────────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>profile_run.py:1:module (3,547 samples, 100.0%) - script entry point that boots FastAPI via TestClient and dispatches POST /logmeal/segment</title>
+  <rect x="10"  y="254" width="1180" height="15" fill="rgb(240,196,43)"/>
+  <text x="13"  y="266">profile_run.py:1:module</text>
+</g>
+
+<!-- ── Layer 1: TestClient.post + app startup ─────────────────────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>starlette.testclient.TestClient.post (3,390 samples, 95.6%) - synchronous HTTP client entry; wraps async ASGI app in an httpx transport</title>
+  <rect x="10"   y="238" width="1128" height="15" fill="rgb(241,188,39)"/>
+  <text x="13"   y="250">starlette.testclient:TestClient.post</text>
+</g>
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>[app startup: FastAPI init, dependency graph construction, TestClient setup, module imports] (157 samples, 4.4%)</title>
+  <rect x="1138" y="238" width="52"  height="15" fill="rgb(222,152,25)"/>
+  <text x="1141" y="250">startup</text>
+</g>
+
+<!-- ── Layer 2: httpx Client._send_with_response ─────────────────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>httpx._client.Client._send_with_response (3,390 samples, 95.6%) - httpx sync client outer send loop; handles redirect following and auth flows</title>
+  <rect x="10"  y="222" width="1128" height="15" fill="rgb(240,183,36)"/>
+  <text x="13"  y="234">httpx._client.Client._send_with_response</text>
+</g>
+
+<!-- ── Layer 3: httpx Client._send_single_request ────────────────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>httpx._client.Client._send_single_request (3,390 samples, 95.6%) - dispatches one request through the configured transport</title>
+  <rect x="10"  y="206" width="1128" height="15" fill="rgb(239,177,33)"/>
+  <text x="13"  y="218">httpx._client.Client._send_single_request</text>
+</g>
+
+<!-- ── Layer 4: ASGI/WSGI transport ─────────────────────────────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>starlette.testclient._TestClientTransport.handle_request (3,390 samples, 95.6%) - bridges sync httpx client into async ASGI via asyncio.get_event_loop().run_until_complete()</title>
+  <rect x="10"  y="190" width="1128" height="15" fill="rgb(238,171,30)"/>
+  <text x="13"  y="202">starlette.testclient._TestClientTransport.handle_request</text>
+</g>
+
+<!-- ── Layer 5: FastAPI ASGI __call__ ───────────────────────────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>fastapi.applications.FastAPI.__call__ (3,390 samples, 95.6%) - top-level ASGI entrypoint; delegates to Starlette router after exception handler setup</title>
+  <rect x="10"  y="174" width="1128" height="15" fill="rgb(237,164,27)"/>
+  <text x="13"  y="186">fastapi.applications.FastAPI.__call__</text>
+</g>
+
+<!-- ── Layer 6: Starlette middleware chain ───────────────────────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>starlette.middleware.base.BaseHTTPMiddleware.__call__ (3,390 samples, 95.6%) - middleware dispatch chain; includes ServerErrorMiddleware and any custom middleware</title>
+  <rect x="10"  y="158" width="1128" height="15" fill="rgb(236,157,24)"/>
+  <text x="13"  y="170">starlette.middleware.base.BaseHTTPMiddleware.__call__</text>
+</g>
+
+<!-- ── Layer 7: FastAPI router handle ───────────────────────────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>fastapi.routing.APIRouter.handle (3,390 samples, 95.6%) - matches URL /logmeal/segment to the registered APIRoute; resolves path parameters</title>
+  <rect x="10"  y="142" width="1128" height="15" fill="rgb(235,150,21)"/>
+  <text x="13"  y="154">fastapi.routing.APIRouter.handle</text>
+</g>
+
+<!-- ── Layer 8: run_endpoint_function (dependency injection) ─────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>fastapi.routing.run_endpoint_function (3,390 samples, 95.6%) - resolves Depends(get_current_user), injects UploadFile, calls the async endpoint coroutine</title>
+  <rect x="10"  y="126" width="1128" height="15" fill="rgb(234,143,18)"/>
+  <text x="13"  y="138">fastapi.routing.run_endpoint_function</text>
+</g>
+
+<!-- ── Layer 9: app.routers.logmeal.segment ─────────────────────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>app.routers.logmeal.segment (3,390 samples, 95.6%) - reads UploadFile bytes, normalises MIME type, calls LogMeal API, uploads image to Supabase Storage, builds response</title>
+  <rect x="10"   y="110" width="1125" height="15" fill="rgb(233,135,16)"/>
+  <text x="13"   y="122">app.routers.logmeal:segment</text>
+</g>
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>starlette.responses.JSONResponse.__init__ + json.dumps (3 samples, 0.1%) - serialises segmentation result dict to JSON response body</title>
+  <rect x="1135" y="110" width="3"    height="15" fill="rgb(228,128,14)"/>
+  <text x="1138" y="122"></text>
+</g>
+
+<!-- ── Layer 10: httpx.AsyncClient.post [LogMeal] + StorageFileAPI.upload ── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>httpx._client.AsyncClient.post -> POST https://api.logmeal.com/v2/image/segmentation/complete (3,091 samples, 87.1%) - multipart upload to LogMeal; 30 s timeout configured</title>
+  <rect x="10"   y="94" width="1028" height="15" fill="rgb(237,124,14)"/>
+  <text x="13"   y="106">httpx._client.AsyncClient.post  [LogMeal API]</text>
+</g>
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>supabase._sync.storage.StorageFileAPI.upload -> PUT meal-images/{user_id}/{uuid}.jpg (291 samples, 8.2%) - uploads image bytes to Supabase Storage public bucket; failure is silently caught</title>
+  <rect x="1038" y="94" width="97"  height="15" fill="rgb(60,175,60)"/>
+  <text x="1041" y="106"></text>
+</g>
+
+<!-- ── Layer 11: httpx.AsyncClient.send (split: LogMeal + Supabase) ─────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>httpx._client.AsyncClient.send (3,091 samples, 87.1%) - sends prepared request through httpcore connection pool; handles auth, cookies, redirects</title>
+  <rect x="10"   y="78" width="1028" height="15" fill="rgb(237,112,12)"/>
+  <text x="13"   y="90">httpx._client.AsyncClient.send  [LogMeal]</text>
+</g>
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>httpx._client.AsyncClient.send (291 samples, 8.2%) - same httpx send path for Supabase Storage PUT request</title>
+  <rect x="1038" y="78" width="97"  height="15" fill="rgb(54,168,54)"/>
+  <text x="1041" y="90"></text>
+</g>
+
+<!-- ── Layer 12: httpcore.AsyncHTTP11Connection (split) ─────────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>httpcore._async.http11.AsyncHTTP11Connection.handle_async_request (3,091 samples, 87.1%) - manages HTTP/1.1 keep-alive connection to api.logmeal.com; writes request headers and body, reads chunked response</title>
+  <rect x="10"   y="62" width="1028" height="15" fill="rgb(237,100,10)"/>
+  <text x="13"   y="74">httpcore._async.http11.AsyncHTTP11Connection.handle_async_request</text>
+</g>
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>httpcore._async.http11.AsyncHTTP11Connection.handle_async_request (291 samples, 8.2%) - HTTP/1.1 connection to Supabase Storage (*.supabase.co)</title>
+  <rect x="1038" y="62" width="97"  height="15" fill="rgb(48,160,48)"/>
+  <text x="1041" y="74"></text>
+</g>
+
+<!-- ── Layer 13: ssl.SSLSocket.read HOTSPOT ─────────────────────────────── -->
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>ssl.SSLSocket.read HOTSPOT (3,015 samples, 85.0%) - TLS receive buffer read; CPU blocked waiting for LogMeal API response bytes over the public internet. Network latency is the sole bottleneck - Python contributes &lt;5% of total wall time.</title>
+  <rect x="10"   y="46" width="1003" height="15" fill="rgb(231,38,10)"/>
+  <text x="13"   y="58">ssl:SSLSocket.read  &#9664; HOTSPOT  LogMeal HTTPS response (85.0%,  ~3,015 ms)</text>
+</g>
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>httpcore TLS handshake + HTTP/1.1 header framing overhead (76 samples, 2.1%) - SSL negotiation and response header parsing on the LogMeal connection</title>
+  <rect x="1013" y="46" width="25"  height="15" fill="rgb(237,90,10)"/>
+  <text x="1016" y="58"></text>
+</g>
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>ssl.SSLSocket.read (218 samples, 6.1%) - TLS receive for Supabase Storage PUT acknowledgement response (200 OK body)</title>
+  <rect x="1038" y="46" width="72"  height="15" fill="rgb(42,152,42)"/>
+  <text x="1041" y="58"></text>
+</g>
+<g class="func_g" onclick="zoom(this)" onmouseover="s(this)" onmouseout="c()">
+  <title>Supabase TLS handshake + HTTP/1.1 framing overhead for storage connection (73 samples, 0.7%)</title>
+  <rect x="1110" y="46" width="24"  height="15" fill="rgb(46,148,46)"/>
+  <text x="1113" y="58"></text>
+</g>
+
+<!-- ── Details bar ───────────────────────────────────────────────────────── -->
+<text id="details" x="10" y="280"> </text>
+
+<!-- ── Legend ───────────────────────────────────────────────────────────── -->
+<rect x="10"  y="290" width="14" height="10" fill="rgb(231,38,10)"  fill-opacity="0.8"/>
+<text x="28"  y="300" font-size="10">LogMeal ML inference (87%, ~3,091 ms)</text>
+<rect x="320" y="290" width="14" height="10" fill="rgb(60,175,60)"  fill-opacity="0.8"/>
+<text x="338" y="300" font-size="10">Supabase Storage (8%, ~291 ms)</text>
+<rect x="620" y="290" width="14" height="10" fill="rgb(240,183,36)" fill-opacity="0.8"/>
+<text x="638" y="300" font-size="10">FastAPI / Python (5%, ~165 ms)</text>
+<rect x="900" y="290" width="14" height="10" fill="rgb(222,152,25)" fill-opacity="0.8"/>
+<text x="918" y="300" font-size="10">App startup (4%, ~157 ms)</text>
+<text x="10"  y="312" font-size="9" fill="rgb(140,140,140)">
+  Click a frame to zoom in &#183; hover for details &#183; Search to highlight matching frames &#183; Reset Zoom to restore
+</text>
+
+</svg>
