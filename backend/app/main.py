@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.routers import auth, profile, diary, logmeal
+
+from app.routers import auth, diary, logmeal, profile
 
 app = FastAPI(title="Food Diary API")
 
@@ -20,6 +21,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         status_code=exc.status_code,
         content={"error": "Request failed", "detail": str(exc.detail)},
     )
+
 
 app.add_middleware(
     CORSMiddleware,

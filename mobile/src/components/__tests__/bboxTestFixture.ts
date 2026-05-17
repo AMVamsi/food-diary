@@ -1,8 +1,7 @@
-export const testImageUri =
-  'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800'
+export const testImageUri = 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800';
 // Pizza image — publicly accessible, no auth required
 
-export const testProcessedImageSize = { width: 640, height: 480 }
+export const testProcessedImageSize = { width: 640, height: 480 };
 
 export const testRegions = [
   {
@@ -24,8 +23,6 @@ export const testRegions = [
   {
     // Region 3: tiny box near top-left — exercises tier 3 (label below)
     contained_bbox: { x: 10, y: 5, w: 60, h: 28 },
-    recognition_results: [
-      { name: 'Garnish', prob: 0.65 },
-    ],
+    recognition_results: [{ name: 'Garnish', prob: 0.65 }],
   },
-]
+];

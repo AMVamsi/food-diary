@@ -1,5 +1,4 @@
-from datetime import datetime, timezone
-from typing import List
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -40,7 +39,7 @@ async def create_entry(
     Returns HTTP 201 with the created entry.
     """
     user_id = str(current_user.id)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = datetime.now(UTC).isoformat()
 
     row: dict = {
         "user_id": user_id,
@@ -59,7 +58,7 @@ async def create_entry(
         raise HTTPException(
             status_code=500,
             detail={"error": "Database error", "detail": str(e)},
-        )
+        ) from e
 
     if not result.data:
         raise HTTPException(
@@ -73,10 +72,10 @@ async def create_entry(
     return _row_to_entry_out(result.data[0])
 
 
-@router.get("", response_model=List[DiaryDayOut])
+@router.get("", response_model=list[DiaryDayOut])
 async def get_entries(
     current_user=Depends(get_current_user),
-) -> List[DiaryDayOut]:
+) -> list[DiaryDayOut]:
     """Fetch all diary entries for the authenticated user, grouped by date.
 
     Results are ordered by logged_at descending so most-recent dates appear
@@ -97,7 +96,7 @@ async def get_entries(
         raise HTTPException(
             status_code=500,
             detail={"error": "Database error", "detail": str(e)},
-        )
+        ) from e
 
     rows: list[dict] = result.data or []
 
@@ -108,7 +107,7 @@ async def get_entries(
         date_key = logged_at_str[:10] if len(logged_at_str) >= 10 else "unknown"
         day_map.setdefault(date_key, []).append(row)
 
-    days: List[DiaryDayOut] = []
+    days: list[DiaryDayOut] = []
     for date_key in sorted(day_map.keys(), reverse=True):
         # Sort entries within the group by logged_at ascending.
         group = sorted(
@@ -137,17 +136,12 @@ async def delete_entry(
     user_id = str(current_user.id)
 
     try:
-        check = (
-            supabase.table("diary_entries")
-            .select("user_id")
-            .eq("id", entry_id)
-            .execute()
-        )
+        check = supabase.table("diary_entries").select("user_id").eq("id", entry_id).execute()
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail={"error": "Database error", "detail": str(e)},
-        )
+        ) from e
 
     if not check.data or str(check.data[0]["user_id"]) != user_id:
         raise HTTPException(
@@ -161,4 +155,4 @@ async def delete_entry(
         raise HTTPException(
             status_code=500,
             detail={"error": "Database error", "detail": str(e)},
-        )
+        ) from e

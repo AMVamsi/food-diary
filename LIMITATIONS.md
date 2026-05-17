@@ -86,3 +86,5 @@ The following are deliberate design decisions, not limitations:
 - **No iOS APK equivalent** — there is no sideloading mechanism on iOS equivalent to Android APK installation. This is an Apple platform constraint.
 
 - **Single backend region** — the Railway deployment runs in a single region. Latency for users outside that region is expected. A production deployment  would use a CDN and multi-region deployment strategy.
+
+See [docs/profiling/PROFILING.md](docs/profiling/PROFILING.md) for runtime performance analysis of the LogMeal proxy endpoint.

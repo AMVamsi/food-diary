@@ -29,9 +29,7 @@ def register(body: AuthRequest) -> JSONResponse:
     but no session is issued until the email link is clicked.
     """
     try:
-        response = supabase.auth.sign_up(
-            {"email": body.email, "password": body.password}
-        )
+        response = supabase.auth.sign_up({"email": body.email, "password": body.password})
         user = response.user
         session = response.session
 
@@ -65,22 +63,22 @@ def register(body: AuthRequest) -> JSONResponse:
                     "error": "Too many attempts",
                     "detail": "Email rate limit exceeded. Please wait a few minutes before trying again.",
                 },
-            )
+            ) from e
         message = str(e).lower()
         if "already registered" in message or "already exists" in message:
             raise HTTPException(
                 status_code=409,
                 detail={"error": "Email already registered", "detail": str(e)},
-            )
+            ) from e
         raise HTTPException(
             status_code=400,
             detail={"error": "Registration failed", "detail": str(e)},
-        )
+        ) from e
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail={"error": "Registration failed", "detail": str(e)},
-        )
+        ) from e
 
 
 @router.post("/login", response_model=AuthResponse)
@@ -110,12 +108,12 @@ def login(body: AuthRequest) -> AuthResponse:
         raise HTTPException(
             status_code=401,
             detail={"error": "Invalid credentials", "detail": str(e)},
-        )
+        ) from e
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail={"error": "Login failed", "detail": str(e)},
-        )
+        ) from e
 
 
 @router.post("/verify-otp", response_model=AuthResponse)
@@ -150,7 +148,7 @@ def verify_otp(body: OtpVerifyRequest) -> AuthResponse:
                         "error": "Too many attempts",
                         "detail": "Email rate limit exceeded. Please wait a few minutes.",
                     },
-                )
+                ) from e
             last_error = str(e)
         except Exception as e:
             last_error = str(e)
@@ -186,13 +184,13 @@ def resend_otp(body: ResendOtpRequest) -> None:
                     "error": "Too many attempts",
                     "detail": "Email rate limit exceeded. Please wait a few minutes before requesting another code.",
                 },
-            )
+            ) from e
         raise HTTPException(
             status_code=400,
             detail={"error": "Resend failed", "detail": str(e)},
-        )
+        ) from e
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail={"error": "Resend failed", "detail": str(e)},
-        )
+        ) from e
