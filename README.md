@@ -193,6 +193,7 @@ food-diary/
 - [Architecture](docs/ARCHITECTURE.md) — system diagram, API reference, caching and auth design
 - [User manual](docs/USER_MANUAL.md) — step-by-step guide for all five flows
 - [Performance profiling](docs/profiling/PROFILING.md) — runtime analysis of POST /logmeal/segment
+- [Contributing](CONTRIBUTING.md) — git workflow, commit conventions, and AI disclosure rules
 - [AI usage disclosure](AI_USAGE.md) — full record of AI-assisted and manual changes
 - [Known limitations](LIMITATIONS.md) — free-tier constraints and deliberate design choices
 
