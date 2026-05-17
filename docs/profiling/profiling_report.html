@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Food Diary — Full-System Profiling Report</title>
+<style>
+
+:root {
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-success: #15803d;
+  --color-background-secondary: #f9fafb;
+  --color-border-primary: #e5e7eb;
+  --color-border-secondary: #9ca3af;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  background: transparent;
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 20px;
+}
+
+section { margin-bottom: 32px; }
+
+.section-heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+/* ── TABLE ── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: fixed;
+}
+
+th {
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+td {
+  padding: 7px 8px;
+  border: 0.5px solid var(--color-border-primary);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+tbody tr:nth-child(even) td { background: var(--color-background-secondary); }
+
+.tag-yes     { color: var(--color-text-success); font-weight: 500; }
+.tag-no      { color: var(--color-text-secondary); }
+.tag-partial { color: var(--color-text-secondary); }
+.tag-black   { color: var(--color-text-secondary); }
+
+/* ── RING CHART ── */
+
+.ring-wrap {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.ring-svg-wrap { flex-shrink: 0; }
+
+.ring-subtitle {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-top: 5px;
+}
+
+.legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-label { flex: 1; color: var(--color-text-primary); }
+.legend-pct   { color: var(--color-text-secondary); min-width: 40px; text-align: right; }
+.legend-ms    { color: var(--color-text-secondary); min-width: 58px; text-align: right; }
+
+/* ── FLAME BARS ── */
+
+.flame-wrap { overflow-x: auto; }
+
+.flame-axis {
+  display: flex;
+  justify-content: space-between;
+  width: 490px;
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  margin-top: 5px;
+}
+
+.flame-note {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+  margin-top: 8px;
+  max-width: 490px;
+}
+
+/* ── ANALYSIS CARDS ── */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.card {
+  border: 1px solid var(--color-border-primary);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.card-accent { height: 3px; }
+
+.card-body { padding: 12px; }
+
+.card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 7px;
+}
+
+.card-text {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+}
+
+.card-text p + p { margin-top: 5px; }
+
+.report-footer {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-primary);
+  margin-top: 12px;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     Section 1 — System layer overview
+     ══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-heading">System layer overview</div>
+  <table>
+    <colgroup>
+      <col style="width:18%">
+      <col style="width:19%">
+      <col style="width:20%">
+      <col style="width:21%">
+      <col style="width:22%">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Layer</th>
+        <th>Component</th>
+        <th>Role</th>
+        <th>Profiled</th>
+        <th>Finding</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Mobile frontend</td>
+        <td>React Native (Expo)</td>
+        <td>UI, BboxOverlay, ingredient search, navigation</td>
+        <td><span class="tag-no">Not measured</span></td>
+        <td>O(n) filter over ~5,000 ingredients; SVG overlay renders O(n) elements per food region detected</td>
+      </tr>
+      <tr>
+        <td>API server</td>
+        <td>FastAPI (Railway)</td>
+        <td>LogMeal proxy, cache, diary CRUD, auth</td>
+        <td><span class="tag-yes">Yes — cProfile + flamegraph</span></td>
+        <td>&lt;5% of wall time is Python; see flamegraph below</td>
+      </tr>
+      <tr>
+        <td>Database + Storage</td>
+        <td>Supabase (Postgres + S3)</td>
+        <td>Auth, diary, ingredient cache, images</td>
+        <td><span class="tag-partial">Partial — visible in backend flamegraph</span></td>
+        <td>Storage upload = 8.2% of request; Postgres not a bottleneck at current data scale</td>
+      </tr>
+      <tr>
+        <td>Food recognition</td>
+        <td>LogMeal API (external)</td>
+        <td>Segmentation, classification, nutrition</td>
+        <td><span class="tag-black">Black box — response time measured only</span></td>
+        <td>87.1% of total wall time = ML inference latency; Python cannot reduce this</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════════════════════════════════════════════════
+     Section 2 — Time breakdown donut ring
+     Circumference (r=80): C = 2π×80 = 502.655 px
+     Segments normalised to 104.4% total → proportional arcs
+     Legend shows actual measured percentages
+     ══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-heading">Time breakdown — POST /logmeal/segment backend profile</div>
+  <div class="ring-wrap">
+
+    <div class="ring-svg-wrap">
+      <svg width="200" height="200" viewBox="0 0 220 220"
+           role="img" aria-label="Donut chart — backend time breakdown">
+        <g transform="rotate(-90 110 110)">
+
+          <!-- LogMeal ML inference: 87.1% — normalised arc 419.27 px of 502.655 -->
+          <circle cx="110" cy="110" r="80" fill="none"
+                  stroke="#E24B4A" stroke-width="30"
+                  stroke-dasharray="419.27 502.655"
+                  stroke-dashoffset="0"/>
+
+          <!-- Supabase Storage: 8.2% — normalised arc 39.45 px -->
+          <circle cx="110" cy="110" r="80" fill="none"
+                  stroke="#1D9E75" stroke-width="30"
+                  stroke-dasharray="39.45 502.655"
+                  stroke-dashoffset="-419.27"/>
+
+          <!-- FastAPI / Python: 4.7% — normalised arc 22.63 px -->
+          <circle cx="110" cy="110" r="80" fill="none"
+                  stroke="#BA7517" stroke-width="30"
+                  stroke-dasharray="22.63 502.655"
+                  stroke-dashoffset="-458.72"/>
+
+          <!-- App startup (one-off): 4.4% — normalised arc 21.20 px -->
+          <circle cx="110" cy="110" r="80" fill="none"
+                  style="stroke:var(--color-border-secondary)" stroke-width="30"
+                  stroke-dasharray="21.20 502.655"
+                  stroke-dashoffset="-481.35"/>
+
+        </g>
+
+        <!-- Centre labels -->
+        <text x="110" y="107" text-anchor="middle"
+              font-family="ui-sans-serif,system-ui,sans-serif"
+              font-size="17" font-weight="600"
+              style="fill:var(--color-text-primary)">3,547 ms</text>
+        <text x="110" y="123" text-anchor="middle"
+              font-family="ui-sans-serif,system-ui,sans-serif"
+              font-size="11"
+              style="fill:var(--color-text-secondary)">total wall time</text>
+      </svg>
+      <div class="ring-subtitle">Backend only — POST /logmeal/segment</div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#E24B4A"></div>
+        <span class="legend-label">LogMeal ML inference</span>
+        <span class="legend-pct">87.1%</span>
+        <span class="legend-ms">3,091 ms</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#1D9E75"></div>
+        <span class="legend-label">Supabase Storage</span>
+        <span class="legend-pct">8.2%</span>
+        <span class="legend-ms">291 ms</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#BA7517"></div>
+        <span class="legend-label">FastAPI / Python</span>
+        <span class="legend-pct">4.7%</span>
+        <span class="legend-ms">165 ms</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:var(--color-border-secondary)"></div>
+        <span class="legend-label">App startup (one-off)</span>
+        <span class="legend-pct">4.4%</span>
+        <span class="legend-ms">157 ms</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════
+     Section 3 — Flame bar stack
+     490 px = 3,547 samples (0.13817 px/sample)
+     Bar height 16 px, gap 3 px → 8 rows × 19 px − 3 = 149 px total
+     Row y values: 0, 19, 38, 57, 76, 95, 114, 133
+     Text baseline: row_y + 12
+     ══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-heading">Call stack profile — POST /logmeal/segment</div>
+  <div class="flame-wrap">
+    <svg width="490" height="149" viewBox="0 0 490 149"
+         font-family="ui-sans-serif,system-ui,sans-serif" font-size="10">
+
+      <!-- Row 1 y=0 — profile_run.py:1:module — 490 px (100.0%, 3,547 ms) -->
+      <rect x="0" y="0" width="490" height="16" fill="#F5CA42"/>
+      <text x="5" y="12" fill="rgba(0,0,0,0.75)">profile_run.py:1:module</text>
+
+      <!-- Row 2 y=19 — TestClient.post 468 px (95.6%, 3,390 ms) + startup 22 px (4.4%, 157 ms) -->
+      <rect x="0" y="19" width="468" height="16" fill="#F5CA42"/>
+      <text x="5" y="31" fill="rgba(0,0,0,0.75)">starlette.testclient:TestClient.post</text>
+      <rect x="468" y="19" width="22" height="16" style="fill:var(--color-border-secondary)"/>
+
+      <!-- Row 3 y=38 — FastAPI routing chain 468 px -->
+      <rect x="0" y="38" width="468" height="16" fill="#E8A818"/>
+      <text x="5" y="50" fill="rgba(0,0,0,0.80)">fastapi.applications.FastAPI.__call__ → BaseHTTPMiddleware → APIRouter.handle</text>
+
+      <!-- Row 4 y=57 — run_endpoint_function 468 px -->
+      <rect x="0" y="57" width="468" height="16" fill="#D4930E"/>
+      <text x="5" y="69" fill="rgba(0,0,0,0.85)">fastapi.routing.run_endpoint_function</text>
+
+      <!-- Row 5 y=76 — logmeal:segment() 467 px (95.5%, 3,388 ms) -->
+      <rect x="0" y="76" width="467" height="16" fill="#B87A00"/>
+      <text x="5" y="88" fill="rgba(0,0,0,0.90)">app.routers.logmeal:segment</text>
+
+      <!-- Row 6 y=95 — AsyncClient.post [LogMeal] 427 px (87.1%, 3,091 ms)
+                        + StorageFileAPI.upload [Supabase] 40 px (8.2%, 291 ms) -->
+      <rect x="0" y="95" width="427" height="16" fill="#E24B4A"/>
+      <text x="5" y="107" fill="rgba(255,255,255,0.90)">httpx._client.AsyncClient.post [LogMeal]</text>
+      <rect x="427" y="95" width="40" height="16" fill="#1D9E75"/>
+
+      <!-- Row 7 y=114 — HTTP11Connection [LogMeal] 427 px
+                        + HTTP11Connection [Supabase] 40 px -->
+      <rect x="0" y="114" width="427" height="16" fill="#E24B4A"/>
+      <text x="5" y="126" fill="rgba(255,255,255,0.90)">httpcore.AsyncHTTP11Connection.handle_async_request</text>
+      <rect x="427" y="114" width="40" height="16" fill="#1D9E75"/>
+
+      <!-- Row 8 y=133 — ssl.SSLSocket.read HOTSPOT 417 px (85.0%, 3,015 ms)
+                        + ssl [Supabase storage] 40 px (8.2%, 291 ms) -->
+      <rect x="0" y="133" width="417" height="16" fill="#A32D2D"/>
+      <text x="5" y="145"
+            fill="rgba(255,255,255,0.95)" font-weight="500" font-size="11">&#8592; HOTSPOT &#183; LogMeal ML inference &#183; 85.0% &#183; ~3,015 ms</text>
+      <rect x="417" y="133" width="40" height="16" fill="#1D9E75"/>
+
+    </svg>
+  </div>
+
+  <div class="flame-axis">
+    <span>0 ms</span>
+    <span>~887 ms</span>
+    <span>~1,774 ms</span>
+    <span>~2,660 ms</span>
+    <span>3,547 ms</span>
+  </div>
+
+  <div class="flame-note">
+    The 85% hotspot is AI inference time measured from the network edge — not Python overhead.
+    LogMeal's food recognition model processes the uploaded image during this window.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════
+     Section 4 — Analysis cards (2×2 grid)
+     ══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-heading">Bottleneck analysis and decisions</div>
+
+  <div class="card-grid">
+
+    <!-- Card 1: ML inference -->
+    <div class="card">
+      <div class="card-accent" style="background:#A32D2D"></div>
+      <div class="card-body">
+        <div class="card-title">ML inference — 87.1%</div>
+        <div class="card-text">
+          <p>LogMeal food recognition runs on external servers. Wall time blocked in ssl.SSLSocket.read = model is processing.</p>
+          <p>Cannot be optimised from application code. Changeable only by replacing the external API.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Storage -->
+    <div class="card">
+      <div class="card-accent" style="background:#1D9E75"></div>
+      <div class="card-body">
+        <div class="card-title">Storage — 8.2%</div>
+        <div class="card-text">
+          <p>Supabase Storage PUT = 291 ms. Image upload runs after ML inference returns.</p>
+          <p>Failure is non-blocking — diary save proceeds regardless. Postgres diary queries not a bottleneck at current scale.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Python code -->
+    <div class="card">
+      <div class="card-accent" style="background:#BA7517"></div>
+      <div class="card-body">
+        <div class="card-title">Python code — 4.7%</div>
+        <div class="card-text">
+          <p>FastAPI routing, dependency injection, Pydantic validation, JSON serialisation = ~165 ms combined.</p>
+          <p>Per the course: "optimise what gives benefits, not what is easy." 4.7% yields at most 165 ms on a 3,547 ms request — not worth optimising.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Decision -->
+    <div class="card">
+      <div class="card-accent" style="background:#3B6D11"></div>
+      <div class="card-body">
+        <div class="card-title">Decision: no Python optimisation</div>
+        <div class="card-text">
+          <p>Course principle applied (lecture slide 33): "Optimise YOUR code — if a library function is slow, change libraries." The bottleneck is external.</p>
+          <p>Existing high-level mitigations already in place: 30 s timeout · 429 proxying · 24 h ingredient cache · non-blocking image upload</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="report-footer">
+    Profiling loop: Write → Measure → Find bottleneck → Decision documented<br>
+    Frontend profiling (React Native) not completed — would require Flipper connected to device during a real session.
+  </div>
+
+</section>
+
+</body>
+</html>

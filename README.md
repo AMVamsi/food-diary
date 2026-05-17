@@ -2,28 +2,35 @@
 
 > AI-powered mobile food diary — photograph a meal to identify it, or search ingredients manually. Built with React Native, FastAPI, and the LogMeal food recognition API.
 
-[![CI](https://github.com/AMVamsi/food-diary/actions/workflows/ci.yml/badge.svg)](https://github.com/AMVamsi/food-diary/actions/workflows/ci.yml)
-[![AI Usage Check](https://github.com/AMVamsi/food-diary/actions/workflows/ai-usage-check.yml/badge.svg)](https://github.com/AMVamsi/food-diary/actions/workflows/ai-usage-check.yml)
-[![codecov](https://codecov.io/gh/AMVamsi/food-diary/branch/main/graph/badge.svg)](https://codecov.io/gh/AMVamsi/food-diary)
-[![GitHub Release](https://img.shields.io/github/v/release/AMVamsi/food-diary)](https://github.com/AMVamsi/food-diary/releases/latest)
+<!-- CI / quality -->
+[![CI](https://github.com/AMVamsi/food-diary/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AMVamsi/food-diary/actions/workflows/ci.yml)
+[![AI Usage Check](https://github.com/AMVamsi/food-diary/actions/workflows/ai-usage-check.yml/badge.svg?branch=main)](https://github.com/AMVamsi/food-diary/actions/workflows/ai-usage-check.yml)
+[![codecov](https://codecov.io/gh/AMVamsi/food-diary/graph/badge.svg?token=CODECOV_TOKEN)](https://codecov.io/gh/AMVamsi/food-diary)
+[![GitHub Release](https://img.shields.io/github/v/release/AMVamsi/food-diary?logo=github)](https://github.com/AMVamsi/food-diary/releases/latest)
+[![License](https://img.shields.io/badge/license-proprietary-red)](LICENSE)
+
+<!-- platform -->
 ![Android](https://img.shields.io/badge/Android-API_29%2B-3DDC84?logo=android&logoColor=white)
 ![iOS](https://img.shields.io/badge/iOS-cross--platform_code-000000?logo=apple&logoColor=white)
 
+<!-- mobile stack -->
 ![React Native](https://img.shields.io/badge/React_Native-0.76-20232A?logo=react&logoColor=61DAFB)
 ![Expo](https://img.shields.io/badge/Expo-SDK_54-000020?logo=expo&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![React Navigation](https://img.shields.io/badge/React_Navigation-v6-6B52AE?logoColor=white)
-![Zustand](https://img.shields.io/badge/Zustand-state-433E38?logoColor=white)
+![Zustand](https://img.shields.io/badge/Zustand-state_mgmt-433E38?logoColor=white)
 
+<!-- backend stack -->
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-containerised-2496ED?logo=docker&logoColor=white)
+![Ruff](https://img.shields.io/badge/Ruff-linted-D7FF64?logo=ruff&logoColor=black)
 
+<!-- infra -->
 ![Supabase](https://img.shields.io/badge/Supabase-Auth_%26_DB-3ECF8E?logo=supabase&logoColor=white)
 ![Railway](https://img.shields.io/badge/Railway-deployed-0B0D0E?logo=railway&logoColor=white)
 
-[![License](https://img.shields.io/badge/license-proprietary-red)]()
 ---
 
 ## What it does
