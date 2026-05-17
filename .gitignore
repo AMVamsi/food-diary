@@ -26,3 +26,7 @@ Thumbs.db
 # Uploads / generated
 backend/uploads/
 *.log
+
+# Coverage
+coverage.xml
+.coverage
