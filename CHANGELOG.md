@@ -1,5 +1,8 @@
 # Changelog
 
+> For development diary, see [DEV_LOG.md](DEV_LOG.md).
+> For AI tool usage, see [AI_USAGE.md](AI_USAGE.md).
+
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)

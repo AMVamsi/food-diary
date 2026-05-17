@@ -2,7 +2,9 @@
 
 > AI-powered mobile food diary — photograph a meal to identify it, or search ingredients manually. Built with React Native, FastAPI, and the LogMeal food recognition API.
 
+[![CI](https://github.com/AMVamsi/food-diary/actions/workflows/ci.yml/badge.svg)](https://github.com/AMVamsi/food-diary/actions/workflows/ci.yml)
 [![AI Usage Check](https://github.com/AMVamsi/food-diary/actions/workflows/ai-usage-check.yml/badge.svg)](https://github.com/AMVamsi/food-diary/actions/workflows/ai-usage-check.yml)
+[![codecov](https://codecov.io/gh/AMVamsi/food-diary/branch/main/graph/badge.svg)](https://codecov.io/gh/AMVamsi/food-diary)
 [![GitHub Release](https://img.shields.io/github/v/release/AMVamsi/food-diary)](https://github.com/AMVamsi/food-diary/releases/latest)
 ![Android](https://img.shields.io/badge/Android-API_29%2B-3DDC84?logo=android&logoColor=white)
 ![iOS](https://img.shields.io/badge/iOS-cross--platform_code-000000?logo=apple&logoColor=white)
@@ -197,6 +199,7 @@ food-diary/
 - [User manual](docs/USER_MANUAL.md) — step-by-step guide for all five flows
 - [Performance profiling](docs/profiling/PROFILING.md) — runtime analysis of POST /logmeal/segment
 - [Contributing](CONTRIBUTING.md) — git workflow, commit conventions, and AI disclosure rules
+- [Changelog](CHANGELOG.md) — release history in Keep a Changelog format
 - [AI usage disclosure](AI_USAGE.md) — full record of AI-assisted and manual changes
 - [Known limitations](LIMITATIONS.md) — free-tier constraints and deliberate design choices
 

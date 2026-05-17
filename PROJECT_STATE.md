@@ -8,10 +8,9 @@ Reference it at the start of every Copilot Chat session.
 
 ## Current status
 
-Day 3 — documentation complete. All 20 core issues done. #21 (EAS build) has EAS configured and
-app.json set up; APK build pending. #22 (README + architecture docs) complete — README.md,
-docs/ARCHITECTURE.md, docs/USER_MANUAL.md written. #23 (AI_USAGE.md), #24 (demo video),
-and #25 (final submission) remain.
+Day 6 — course-work implementation sprint complete. Issues #26–#35 closed. Pre-merge verification
+pass done: ruff lint clean, pytest 16/16, jest 29/29, eslint and prettier clean, CI workflow updated.
+Branch `test` is ready for PR merge into `main`. Last updated: 2026-05-17.
 
 ---
 
@@ -42,8 +41,17 @@ and #25 (final submission) remain.
 | #21 | EAS build — APK | ✅ done |
 | #22 | README + architecture docs | ✅ done |
 | #23 | Finalise AI_USAGE.md |  ✅ done |
-| #24 | Demo video | ⬜ not started |
-| #25 | Final submission | ⬜ not started |
+| #24 | Demo video | ✅ done |
+| #25 | Final submission | ✅ done|
+| #57 | LICENSE file | ✅ done |
+| #58 | IDE config (.vscode, ESLint, Prettier, Ruff) | ✅ done |
+| #59 | Jest tests (bbox scaling, diary store) | ✅ done |
+| #60 | pytest tests (profile, cache, diary) | ✅ done |
+| #61 | Full CI workflow (lint, format, test, coverage) | ✅ done |
+| #62 | Profiling artefact and PROFILING.md | ✅ done |
+| #63 | CONTRIBUTING.md and git workflow docs | ✅ done |
+| #64 | GitHub Release v1.0.0-beta and CHANGELOG.md | ✅ done |
+| #65 | pyproject.toml and requirements.lock | ✅ done |
 
 ---
 

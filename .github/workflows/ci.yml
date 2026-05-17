@@ -21,13 +21,17 @@ jobs:
       - name: Install dependencies
         run: |
           pip install ruff pytest pytest-cov httpx
-          pip install -r backend/requirements.txt
+          if [ -f backend/requirements.lock ]; then
+            pip install -r backend/requirements.lock
+          else
+            pip install -r backend/requirements.txt
+          fi
 
       - name: Ruff lint
-        run: ruff check backend/app/ --config backend/ruff.toml
+        run: ruff check backend/app/ --config backend/pyproject.toml
 
       - name: Ruff format check
-        run: ruff format --check backend/app/ --config backend/ruff.toml
+        run: ruff format --check backend/app/ --config backend/pyproject.toml
 
       - name: pytest with coverage
         run: pytest backend/tests/ --cov=backend/app --cov-report=xml --cov-report=term-missing

@@ -207,3 +207,39 @@ The application uses free-tier services for this submission.
 See [LIMITATIONS.md](../LIMITATIONS.md) for specific rate limits and constraints that apply to the current deployment.
 
 [APK download — link to be added after build]
+
+---
+
+## CI/CD
+
+### Continuous Integration (ci.yml)
+
+Triggers on every push and pull request to `main` and `dev`.
+
+**Backend job:**
+1. Install dependencies from `requirements.lock` (falls back to `requirements.txt` if lockfile absent)
+2. `ruff check backend/app/` — lint must pass before tests run
+3. `ruff format --check backend/app/` — format check
+4. `pytest backend/tests/ --cov=backend/app --cov-report=xml` — tests with coverage
+5. Upload `coverage.xml` to CodeCov with flag `backend`
+
+**Mobile job:**
+1. `npm ci` — reproducible install from `package-lock.json`
+2. `npx eslint src/` — lint must pass before tests run
+3. `npx prettier --check "src/**/*.{ts,tsx}"` — format check
+4. `npm test -- --coverage --coverageReporters=lcov` — tests with coverage
+5. Upload `mobile/coverage/lcov.info` to CodeCov with flag `mobile`
+
+CodeCov token is read from `${{ secrets.CODECOV_TOKEN }}` — never hardcoded.
+
+### Continuous Deployment
+
+**Android APK:** built via EAS Build (`preview` profile using `assembleRelease`), attached to GitHub Release v1.0.0-beta.
+
+**Backend:** auto-deploys to Railway on push to `main` via Dockerfile. Railway injects `PORT`; the container starts uvicorn on that port.
+
+### AI Usage CI (ai-usage-check.yml)
+
+Triggers on every push (all branches) and on pull requests to `main`.
+
+Enforces `[log:slug]` token on every non-merge, non-auto-generated commit. Validates that each slug has a corresponding row in `AI_USAGE.md`. Merge commits, Copilot review suggestion commits, and GitHub web-editor "Update *.md" commits are automatically exempted.

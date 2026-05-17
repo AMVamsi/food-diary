@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,87 +11,86 @@ import {
   Platform,
   Linking,
   StyleSheet,
-} from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as ImagePicker from 'expo-image-picker'
-import * as ImageManipulator from 'expo-image-manipulator'
-import { Camera } from 'expo-camera'
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { Camera } from 'expo-camera';
 
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native';
 
-import BboxOverlay from '../components/BboxOverlay'
-import Button from '../components/Button'
-import ErrorMessage from '../components/ErrorMessage'
-import Input from '../components/Input'
-import { client } from '../api/client'
-import { useAuthStore } from '../store/auth'
-import { colors } from '../theme/colors'
-import { spacing } from '../theme/spacing'
-import { typography } from '../theme/typography'
+import BboxOverlay from '../components/BboxOverlay';
+import Button from '../components/Button';
+import ErrorMessage from '../components/ErrorMessage';
+import Input from '../components/Input';
+import { client } from '../api/client';
+import { useAuthStore } from '../store/auth';
+import { colors } from '../theme/colors';
+import { spacing } from '../theme/spacing';
+import { typography } from '../theme/typography';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface RecognitionCandidate {
-  id: number
-  name: string
-  prob: number
+  id: number;
+  name: string;
+  prob: number;
 }
 
 interface SegmentationRegion {
-  food_item_position: number
-  contained_bbox: { x: number; y: number; w: number; h: number }
-  recognition_results: RecognitionCandidate[]
+  food_item_position: number;
+  contained_bbox: { x: number; y: number; w: number; h: number };
+  recognition_results: RecognitionCandidate[];
 }
 
 interface ProcessedImageSize {
-  width: number
-  height: number
+  width: number;
+  height: number;
 }
 
 interface SegmentationResponse {
-  imageId: number
-  processed_image_size: ProcessedImageSize
-  occasion: string
-  segmentation_results: SegmentationRegion[]
-  image_url: string | null
+  imageId: number;
+  processed_image_size: ProcessedImageSize;
+  occasion: string;
+  segmentation_results: SegmentationRegion[];
+  image_url: string | null;
 }
 
 // LogMeal /confirm/dish response — we only care that it succeeded.
 interface ConfirmResponse {
-  status?: string
-  imageId?: number
+  status?: string;
+  imageId?: number;
 }
 
 // LogMeal /nutrition/recipe/nutritionalInfo — defensively typed.
 // LogMeal preserves the typo "totalNutritients"; we keep a fallback to
 // "totalNutrients" in case it is ever fixed upstream.
 interface KcalQuantity {
-  quantity: number
-  unit: string
+  quantity: number;
+  unit: string;
 }
 interface NutrientBag {
-  totalNutritients?: { ENERC_KCAL?: KcalQuantity }
-  totalNutrients?: { ENERC_KCAL?: KcalQuantity }
+  totalNutritients?: { ENERC_KCAL?: KcalQuantity };
+  totalNutrients?: { ENERC_KCAL?: KcalQuantity };
 }
 interface NutritionItem {
-  food_name?: string
-  name?: string
-  serving_size?: number
-  unit?: string
-  nutritional_info?: NutrientBag
+  food_name?: string;
+  name?: string;
+  serving_size?: number;
+  unit?: string;
+  nutritional_info?: NutrientBag;
 }
 interface NutritionResponse {
-  serving_size?: number
-  nutritional_info?: NutrientBag
-  nutritional_info_per_item?: NutritionItem[]
+  serving_size?: number;
+  nutritional_info?: NutrientBag;
+  nutritional_info_per_item?: NutritionItem[];
 }
 
 function extractKcal(bag: NutrientBag | undefined): number {
   const k =
-    bag?.totalNutrients?.ENERC_KCAL?.quantity ??
-    bag?.totalNutritients?.ENERC_KCAL?.quantity
-  return typeof k === 'number' ? k : 0
+    bag?.totalNutrients?.ENERC_KCAL?.quantity ?? bag?.totalNutritients?.ENERC_KCAL?.quantity;
+  return typeof k === 'number' ? k : 0;
 }
 
 // ─── State machine ───────────────────────────────────────────────────────────
@@ -100,47 +99,52 @@ type ScreenState =
   | { phase: 'entry' }
   | { phase: 'loading'; imageUri: string }
   | { phase: 'result'; imageUri: string; response: SegmentationResponse }
-  | { phase: 'error'; message: string }
+  | { phase: 'error'; message: string };
 
 // Tagged error thrown by uploadImage so mapErrorMessage can distinguish
 // network failures, timeouts, and HTTP error codes without relying on axios.
 class UploadError extends Error {
   constructor(
     public readonly code: 'network' | 'timeout' | 'http',
-    public readonly status?: number,
+    public readonly status?: number
   ) {
-    super(code)
-    this.name = 'UploadError'
+    super(code);
+    this.name = 'UploadError';
   }
 }
 
 function mapErrorMessage(err: unknown): string {
   if (err instanceof UploadError) {
-    if (err.code === 'timeout') return 'The upload timed out — please try again'
-    if (err.code === 'network') return 'No internet connection — please check your connection'
-    const status = err.status
-    if (status === 401) return 'Your session has expired — please sign out and sign in again'
-    if (status === 400 || status === 422) return 'The photo could not be processed — please try a different image'
-    if (status === 429) return 'Too many requests — please wait a moment before trying again'
-    if (status === 502) return 'The food recognition service is unavailable — please try again later'
-    if (status === 504) return 'The analysis is taking too long — please try again'
-    if (status !== undefined && status >= 500) return 'Something went wrong with the food recognition service'
+    if (err.code === 'timeout') return 'The upload timed out — please try again';
+    if (err.code === 'network') return 'No internet connection — please check your connection';
+    const status = err.status;
+    if (status === 401) return 'Your session has expired — please sign out and sign in again';
+    if (status === 400 || status === 422)
+      return 'The photo could not be processed — please try a different image';
+    if (status === 429) return 'Too many requests — please wait a moment before trying again';
+    if (status === 502)
+      return 'The food recognition service is unavailable — please try again later';
+    if (status === 504) return 'The analysis is taking too long — please try again';
+    if (status !== undefined && status >= 500)
+      return 'Something went wrong with the food recognition service';
   }
-  return 'An unexpected error occurred — please try again'
+  return 'An unexpected error occurred — please try again';
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function PhotoLogScreen() {
-  const { width } = useWindowDimensions()
-  const insets = useSafeAreaInsets()
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
-  const [screen, setScreen] = useState<ScreenState>({ phase: 'entry' })
-  const [cameraPermission, setCameraPermission] = useState<boolean | null>(null)
-  const [galleryPermission, setGalleryPermission] = useState<boolean | null>(null)
-  const [permissionDeniedSource, setPermissionDeniedSource] = useState<'camera' | 'gallery' | null>(null)
+  const [screen, setScreen] = useState<ScreenState>({ phase: 'entry' });
+  const [cameraPermission, setCameraPermission] = useState<boolean | null>(null);
+  const [galleryPermission, setGalleryPermission] = useState<boolean | null>(null);
+  const [permissionDeniedSource, setPermissionDeniedSource] = useState<'camera' | 'gallery' | null>(
+    null
+  );
 
-  const navigation = useNavigation()
+  const navigation = useNavigation();
 
   // ─── #14 state ──────────────────────────────────────────────────────────────
   // Per-region selected dish id, keyed by region INDEX in segmentation_results.
@@ -148,30 +152,30 @@ export default function PhotoLogScreen() {
   // unique id field on each region (it's reliably present on candidates, not
   // regions). Index is guaranteed unique within an image. The candidate's id
   // is used as the value because that's what /confirm/dish expects.
-  const [selections, setSelections] = useState<Record<number, number>>({})
+  const [selections, setSelections] = useState<Record<number, number>>({});
   // Per-region transient state for the confirm-all action. Also keyed by
   // index for the same reason.
   const [regionStatus, setRegionStatus] = useState<
     Record<number, 'idle' | 'pending' | 'done' | 'error'>
-  >({})
+  >({});
   // True while the "Confirm selections" button is processing. Drives the
   // button's loading prop and disables candidate taps.
-  const [confirmingAll, setConfirmingAll] = useState<boolean>(false)
+  const [confirmingAll, setConfirmingAll] = useState<boolean>(false);
   // Settled nutrition response for the meal. Null until /logmeal/nutrition
   // returns; presence of this object also means "we are now in step B".
-  const [nutrition, setNutrition] = useState<NutritionResponse | null>(null)
-  const [nutritionLoading, setNutritionLoading] = useState<boolean>(false)
-  const [nutritionError, setNutritionError] = useState<string | null>(null)
+  const [nutrition, setNutrition] = useState<NutritionResponse | null>(null);
+  const [nutritionLoading, setNutritionLoading] = useState<boolean>(false);
+  const [nutritionError, setNutritionError] = useState<string | null>(null);
   // Serving size, kept as a string per profile-screen convention. Parsed to a
   // number only at calculation and save time.
-  const [servingInput, setServingInput] = useState<string>('')
-  const [saving, setSaving] = useState<boolean>(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const [servingInput, setServingInput] = useState<string>('');
+  const [saving, setSaving] = useState<boolean>(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const imageDisplayWidth = width - spacing.xxl * 2
+  const imageDisplayWidth = width - spacing.xxl * 2;
 
   function getDisplayHeight(processedImageSize: ProcessedImageSize): number {
-    return imageDisplayWidth * (processedImageSize.height / processedImageSize.width)
+    return imageDisplayWidth * (processedImageSize.height / processedImageSize.width);
   }
 
   // ─── #14 derived + effects ────────────────────────────────────────────────
@@ -180,52 +184,52 @@ export default function PhotoLogScreen() {
   // time a result is rendered. We only initialise regions we have not seen
   // before so a user's manual change to selections survives re-renders.
   useEffect(() => {
-    if (screen.phase !== 'result') return
+    if (screen.phase !== 'result') return;
     setSelections((prev) => {
-      const next: Record<number, number> = { ...prev }
-      let changed = false
+      const next: Record<number, number> = { ...prev };
+      let changed = false;
       screen.response.segmentation_results.forEach((region, idx) => {
         if (next[idx] === undefined && region.recognition_results.length > 0) {
-          next[idx] = region.recognition_results[0].id
-          changed = true
+          next[idx] = region.recognition_results[0].id;
+          changed = true;
         }
-      })
-      return changed ? next : prev
-    })
-  }, [screen])
+      });
+      return changed ? next : prev;
+    });
+  }, [screen]);
 
   const baseGrams: number = useMemo(() => {
-    const v = nutrition?.serving_size
-    return typeof v === 'number' && v > 0 ? v : 100
-  }, [nutrition])
+    const v = nutrition?.serving_size;
+    return typeof v === 'number' && v > 0 ? v : 100;
+  }, [nutrition]);
 
-  const baseKcal: number = useMemo(() => extractKcal(nutrition?.nutritional_info), [nutrition])
+  const baseKcal: number = useMemo(() => extractKcal(nutrition?.nutritional_info), [nutrition]);
 
   const userGrams: number = useMemo(() => {
-    const n = parseFloat(servingInput)
-    return Number.isFinite(n) ? n : NaN
-  }, [servingInput])
+    const n = parseFloat(servingInput);
+    return Number.isFinite(n) ? n : NaN;
+  }, [servingInput]);
 
   const adjustedKcal: number = useMemo(() => {
-    if (!Number.isFinite(userGrams) || userGrams <= 0 || baseGrams <= 0) return 0
-    return (baseKcal / baseGrams) * userGrams
-  }, [baseKcal, baseGrams, userGrams])
+    if (!Number.isFinite(userGrams) || userGrams <= 0 || baseGrams <= 0) return 0;
+    return (baseKcal / baseGrams) * userGrams;
+  }, [baseKcal, baseGrams, userGrams]);
 
   const servingInvalid: boolean =
-    servingInput.trim() === '' || !Number.isFinite(userGrams) || userGrams <= 0
+    servingInput.trim() === '' || !Number.isFinite(userGrams) || userGrams <= 0;
 
   // Reset all #14 transient state. Used both on "Cancel" and on a successful
   // save so the screen returns to a clean entry view.
   function resetPhotoLogState(): void {
-    setSelections({})
-    setRegionStatus({})
-    setConfirmingAll(false)
-    setNutrition(null)
-    setNutritionLoading(false)
-    setNutritionError(null)
-    setServingInput('')
-    setSaving(false)
-    setSaveError(null)
+    setSelections({});
+    setRegionStatus({});
+    setConfirmingAll(false);
+    setNutrition(null);
+    setNutritionLoading(false);
+    setNutritionError(null);
+    setServingInput('');
+    setSaving(false);
+    setSaveError(null);
   }
 
   // POST all region confirmations in one batch call — LogMeal's /confirm/dish
@@ -234,34 +238,40 @@ export default function PhotoLogScreen() {
   async function confirmAllRegions(
     imageId: number,
     regions: SegmentationRegion[],
-    selectedDishIds: Record<number, number>,
+    selectedDishIds: Record<number, number>
   ): Promise<boolean> {
-    const positions: number[] = []
-    const classes: number[] = []
+    const positions: number[] = [];
+    const classes: number[] = [];
     for (let idx = 0; idx < regions.length; idx++) {
-      const dishId = selectedDishIds[idx]
-      if (dishId === undefined) return false
-      positions.push(regions[idx].food_item_position)
-      classes.push(dishId)
+      const dishId = selectedDishIds[idx];
+      if (dishId === undefined) return false;
+      positions.push(regions[idx].food_item_position);
+      classes.push(dishId);
     }
-    const pending: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {}
-    regions.forEach((_, idx) => { pending[idx] = 'pending' })
-    setRegionStatus(pending)
+    const pending: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {};
+    regions.forEach((_, idx) => {
+      pending[idx] = 'pending';
+    });
+    setRegionStatus(pending);
     try {
       await client.post<ConfirmResponse>('/logmeal/confirm', {
         imageId,
         food_item_position: positions,
         confirmedClass: classes,
-      })
-      const done: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {}
-      regions.forEach((_, idx) => { done[idx] = 'done' })
-      setRegionStatus(done)
-      return true
+      });
+      const done: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {};
+      regions.forEach((_, idx) => {
+        done[idx] = 'done';
+      });
+      setRegionStatus(done);
+      return true;
     } catch {
-      const error: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {}
-      regions.forEach((_, idx) => { error[idx] = 'error' })
-      setRegionStatus(error)
-      return false
+      const error: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {};
+      regions.forEach((_, idx) => {
+        error[idx] = 'error';
+      });
+      setRegionStatus(error);
+      return false;
     }
   }
 
@@ -269,65 +279,66 @@ export default function PhotoLogScreen() {
   // regions — not one call per region. Called only after every region has
   // been successfully confirmed.
   async function fetchNutrition(imageId: number): Promise<void> {
-    if (nutritionLoading || nutrition !== null) return
-    setNutritionLoading(true)
-    setNutritionError(null)
+    if (nutritionLoading || nutrition !== null) return;
+    setNutritionLoading(true);
+    setNutritionError(null);
     try {
-      const res = await client.post<NutritionResponse>('/logmeal/nutrition', { imageId })
-      setNutrition(res.data)
-      const initialGrams = typeof res.data.serving_size === 'number' && res.data.serving_size > 0
-        ? res.data.serving_size
-        : 100
-      setServingInput(String(initialGrams))
+      const res = await client.post<NutritionResponse>('/logmeal/nutrition', { imageId });
+      setNutrition(res.data);
+      const initialGrams =
+        typeof res.data.serving_size === 'number' && res.data.serving_size > 0
+          ? res.data.serving_size
+          : 100;
+      setServingInput(String(initialGrams));
     } catch {
-      setNutritionError('Could not load nutrition information — please try again')
+      setNutritionError('Could not load nutrition information — please try again');
     } finally {
-      setNutritionLoading(false)
+      setNutritionLoading(false);
     }
   }
 
   // Drives Step A → Step B. Confirms all regions in one batch call, then
   // advances to nutrition fetch on success.
   async function handleConfirmAll(): Promise<void> {
-    if (screen.phase !== 'result') return
-    const { response } = screen
-    const missing = response.segmentation_results.some((_, idx) => selections[idx] === undefined)
+    if (screen.phase !== 'result') return;
+    const { response } = screen;
+    const missing = response.segmentation_results.some((_, idx) => selections[idx] === undefined);
     if (missing) {
-      const next: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {}
+      const next: Record<number, 'idle' | 'pending' | 'done' | 'error'> = {};
       response.segmentation_results.forEach((_, idx) => {
-        next[idx] = selections[idx] === undefined ? 'error' : (regionStatus[idx] ?? 'idle')
-      })
-      setRegionStatus(next)
-      return
+        next[idx] = selections[idx] === undefined ? 'error' : (regionStatus[idx] ?? 'idle');
+      });
+      setRegionStatus(next);
+      return;
     }
-    setConfirmingAll(true)
-    const ok = await confirmAllRegions(response.imageId, response.segmentation_results, selections)
-    setConfirmingAll(false)
-    if (ok) await fetchNutrition(response.imageId)
+    setConfirmingAll(true);
+    const ok = await confirmAllRegions(response.imageId, response.segmentation_results, selections);
+    setConfirmingAll(false);
+    if (ok) await fetchNutrition(response.imageId);
   }
 
   // Retry re-confirms all regions as a batch — LogMeal needs all positions
   // in a single call, so there is no meaningful per-region retry.
   async function handleRetryRegion(): Promise<void> {
-    await handleConfirmAll()
+    await handleConfirmAll();
   }
 
   // Build the concatenated food_name from the user's confirmed selections.
   function buildFoodName(response: SegmentationResponse): string {
     const names = response.segmentation_results
       .map((region, idx) => {
-        const id = selections[idx]
-        const c = region.recognition_results.find((rc) => rc.id === id)
-        return c?.name ?? null
+        const id = selections[idx];
+        const c = region.recognition_results.find((rc) => rc.id === id);
+        return c?.name ?? null;
       })
-      .filter((n): n is string => n !== null && n.length > 0)
-    return names.join(' + ')
+      .filter((n): n is string => n !== null && n.length > 0);
+    return names.join(' + ');
   }
 
   async function handleSaveDiary(): Promise<void> {
-    if (screen.phase !== 'result' || !nutrition || servingInvalid) return
-    setSaving(true)
-    setSaveError(null)
+    if (screen.phase !== 'result' || !nutrition || servingInvalid) return;
+    setSaving(true);
+    setSaveError(null);
     try {
       await client.post('/diary', {
         entry_type: 'photo',
@@ -338,20 +349,20 @@ export default function PhotoLogScreen() {
         occasion: screen.response.occasion ?? null,
         image_url: screen.response.image_url ?? null,
         logged_at: new Date().toISOString(),
-      })
-      resetPhotoLogState()
-      setScreen({ phase: 'entry' })
-      navigation.navigate('Diary' as never)
+      });
+      resetPhotoLogState();
+      setScreen({ phase: 'entry' });
+      navigation.navigate('Diary' as never);
     } catch {
-      setSaveError('Could not save to diary — please try again')
+      setSaveError('Could not save to diary — please try again');
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   function handleCancel(): void {
-    resetPhotoLogState()
-    setScreen({ phase: 'entry' })
+    resetPhotoLogState();
+    setScreen({ phase: 'entry' });
   }
 
   /** Convert any camera/gallery image to a small JPEG before upload.
@@ -360,31 +371,30 @@ export default function PhotoLogScreen() {
    *    brings them under ~500 KB so uploads stay well within the 60 s timeout.
    */
   async function normaliseToJpeg(uri: string): Promise<string> {
-    const result = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: 1280 } }],
-      { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG },
-    )
-    return result.uri
+    const result = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 1280 } }], {
+      compress: 0.85,
+      format: ImageManipulator.SaveFormat.JPEG,
+    });
+    return result.uri;
   }
 
   async function uploadImage(uri: string): Promise<void> {
-    const formData = new FormData()
-    const filename = uri.split('/').pop() ?? 'meal.jpg'
-    formData.append('file', { uri, name: filename, type: 'image/jpeg' } as unknown as Blob)
+    const formData = new FormData();
+    const filename = uri.split('/').pop() ?? 'meal.jpg';
+    formData.append('file', { uri, name: filename, type: 'image/jpeg' } as unknown as Blob);
 
-    const token = useAuthStore.getState().token
-    const baseUrl = (process.env.EXPO_PUBLIC_API_URL ?? 'http://127.0.0.1:8000').replace(/\/$/, '')
+    const token = useAuthStore.getState().token;
+    const baseUrl = (process.env.EXPO_PUBLIC_API_URL ?? 'http://127.0.0.1:8000').replace(/\/$/, '');
 
     // Use native fetch instead of axios for this multipart request.
     // axios's FormData detection (instanceof checks) is unreliable on Android/Hermes,
     // causing it to stringify the body to "{}" and set Content-Type: application/json.
     // React Native's fetch handles FormData natively and correctly on both platforms —
     // it automatically sets multipart/form-data with the correct boundary.
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 60_000)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60_000);
 
-    let res: Response
+    let res: Response;
     try {
       res = await fetch(`${baseUrl}/logmeal/segment`, {
         method: 'POST',
@@ -394,104 +404,104 @@ export default function PhotoLogScreen() {
         },
         body: formData,
         signal: controller.signal,
-      })
+      });
     } catch (err) {
-      clearTimeout(timeoutId)
-      if (err instanceof Error && err.name === 'AbortError') throw new UploadError('timeout')
-      throw new UploadError('network')
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === 'AbortError') throw new UploadError('timeout');
+      throw new UploadError('network');
     }
-    clearTimeout(timeoutId)
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
-      throw new UploadError('http', res.status)
+      throw new UploadError('http', res.status);
     }
 
-    const data: SegmentationResponse = await res.json()
-    setScreen({ phase: 'result', imageUri: uri, response: data })
+    const data: SegmentationResponse = await res.json();
+    setScreen({ phase: 'result', imageUri: uri, response: data });
   }
 
   async function handleCamera(): Promise<void> {
-    setPermissionDeniedSource(null)
+    setPermissionDeniedSource(null);
 
-    let granted = cameraPermission
+    let granted = cameraPermission;
     if (granted === null) {
-      const result = await Camera.requestCameraPermissionsAsync()
-      granted = result.status === 'granted'
-      setCameraPermission(granted)
+      const result = await Camera.requestCameraPermissionsAsync();
+      granted = result.status === 'granted';
+      setCameraPermission(granted);
     }
 
     if (!granted) {
-      setPermissionDeniedSource('camera')
-      return
+      setPermissionDeniedSource('camera');
+      return;
     }
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: 'images',
       quality: 0.85,
       allowsEditing: false,
-    })
+    });
 
-    if (result.canceled || result.assets.length === 0) return
+    if (result.canceled || result.assets.length === 0) return;
 
-    const asset = result.assets[0]
-    setScreen({ phase: 'loading', imageUri: asset.uri })
+    const asset = result.assets[0];
+    setScreen({ phase: 'loading', imageUri: asset.uri });
 
     try {
-      const jpegUri = await normaliseToJpeg(asset.uri)
-      await uploadImage(jpegUri)
+      const jpegUri = await normaliseToJpeg(asset.uri);
+      await uploadImage(jpegUri);
     } catch (err) {
-      setScreen({ phase: 'error', message: mapErrorMessage(err) })
+      setScreen({ phase: 'error', message: mapErrorMessage(err) });
     }
   }
 
   async function handleGallery(): Promise<void> {
-    setPermissionDeniedSource(null)
+    setPermissionDeniedSource(null);
 
-    let granted = galleryPermission
+    let granted = galleryPermission;
     if (granted === null) {
-      const result = await ImagePicker.requestMediaLibraryPermissionsAsync()
-      granted = result.status === 'granted'
-      setGalleryPermission(granted)
+      const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      granted = result.status === 'granted';
+      setGalleryPermission(granted);
     }
 
     if (!granted) {
-      setPermissionDeniedSource('gallery')
-      return
+      setPermissionDeniedSource('gallery');
+      return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       quality: 0.85,
       allowsEditing: false,
-    })
+    });
 
-    if (result.canceled || result.assets.length === 0) return
+    if (result.canceled || result.assets.length === 0) return;
 
-    const asset = result.assets[0]
-    setScreen({ phase: 'loading', imageUri: asset.uri })
+    const asset = result.assets[0];
+    setScreen({ phase: 'loading', imageUri: asset.uri });
 
     try {
-      const jpegUri = await normaliseToJpeg(asset.uri)
-      await uploadImage(jpegUri)
+      const jpegUri = await normaliseToJpeg(asset.uri);
+      await uploadImage(jpegUri);
     } catch (err) {
-      setScreen({ phase: 'error', message: mapErrorMessage(err) })
+      setScreen({ phase: 'error', message: mapErrorMessage(err) });
     }
   }
 
   function resetToEntry(): void {
-    setPermissionDeniedSource(null)
-    resetPhotoLogState()
-    setScreen({ phase: 'entry' })
+    setPermissionDeniedSource(null);
+    resetPhotoLogState();
+    setScreen({ phase: 'entry' });
   }
 
   // ─── Render helpers ────────────────────────────────────────────────────────
 
-  const isLoading = screen.phase === 'loading'
+  const isLoading = screen.phase === 'loading';
 
   function renderPermissionBanner(): React.ReactNode {
-    if (!permissionDeniedSource) return null
-    const isCamera = permissionDeniedSource === 'camera'
-    const label = isCamera ? 'camera' : 'photo library'
+    if (!permissionDeniedSource) return null;
+    const isCamera = permissionDeniedSource === 'camera';
+    const label = isCamera ? 'camera' : 'photo library';
     return (
       <View style={styles.permissionBanner}>
         <Text style={styles.permissionText}>
@@ -501,7 +511,7 @@ export default function PhotoLogScreen() {
           <Text style={styles.settingsLinkText}>Open Settings</Text>
         </TouchableOpacity>
       </View>
-    )
+    );
   }
 
   function renderEntryView(): React.ReactNode {
@@ -516,9 +526,7 @@ export default function PhotoLogScreen() {
 
         <View style={styles.actionCard}>
           <Text style={styles.actionLabel}>Camera</Text>
-          <Text style={styles.actionDescription}>
-            Point your camera at the food on your plate.
-          </Text>
+          <Text style={styles.actionDescription}>Point your camera at the food on your plate.</Text>
           <Button
             title="Take a photo"
             onPress={handleCamera}
@@ -529,9 +537,7 @@ export default function PhotoLogScreen() {
 
         <View style={[styles.actionCard, { marginTop: spacing.lg }]}>
           <Text style={styles.actionLabel}>Gallery</Text>
-          <Text style={styles.actionDescription}>
-            Choose an existing photo from your library.
-          </Text>
+          <Text style={styles.actionDescription}>Choose an existing photo from your library.</Text>
           <Button
             title="Choose from library"
             onPress={handleGallery}
@@ -540,7 +546,7 @@ export default function PhotoLogScreen() {
           />
         </View>
       </View>
-    )
+    );
   }
 
   function renderLoadingView(imageUri: string): React.ReactNode {
@@ -549,7 +555,10 @@ export default function PhotoLogScreen() {
         <View style={[styles.imageWrapper, { width: imageDisplayWidth }]}>
           <Image
             source={{ uri: imageUri }}
-            style={[styles.loadingImage, { width: imageDisplayWidth, height: imageDisplayWidth * 0.75 }]}
+            style={[
+              styles.loadingImage,
+              { width: imageDisplayWidth, height: imageDisplayWidth * 0.75 },
+            ]}
             resizeMode="cover"
           />
           <View style={styles.loadingOverlay}>
@@ -558,78 +567,59 @@ export default function PhotoLogScreen() {
         </View>
         <Text style={styles.loadingText}>Analysing your meal…</Text>
       </View>
-    )
+    );
   }
 
   function renderRegionCard(region: SegmentationRegion, index: number): React.ReactNode {
-    const top5 = region.recognition_results.slice(0, 5)
-    const selectedId = selections[index]
-    const status = regionStatus[index] ?? 'idle'
+    const top5 = region.recognition_results.slice(0, 5);
+    const selectedId = selections[index];
+    const status = regionStatus[index] ?? 'idle';
     // After Step B has begun (nutrition is loaded or loading), candidate
     // selection is locked — the user cannot retroactively change a confirmed
     // selection without cancelling the flow.
-    const locked = nutrition !== null || nutritionLoading || confirmingAll
+    const locked = nutrition !== null || nutritionLoading || confirmingAll;
     return (
       <View key={index} style={styles.regionCard}>
         <View style={styles.regionCardHeader}>
           <Text style={styles.regionCardTitle}>Region {index + 1}</Text>
-          {status === 'pending' && (
-            <ActivityIndicator size="small" color={colors.gradientEnd} />
-          )}
-          {status === 'done' && (
-            <Text style={styles.regionStatusDone}>Confirmed</Text>
-          )}
+          {status === 'pending' && <ActivityIndicator size="small" color={colors.gradientEnd} />}
+          {status === 'done' && <Text style={styles.regionStatusDone}>Confirmed</Text>}
         </View>
         {top5.map((candidate) => {
-          const isSelected = candidate.id === selectedId
+          const isSelected = candidate.id === selectedId;
           return (
             <TouchableOpacity
               key={candidate.id}
               activeOpacity={0.7}
               disabled={locked}
-              onPress={() =>
-                setSelections((s) => ({ ...s, [index]: candidate.id }))
-              }
+              onPress={() => setSelections((s) => ({ ...s, [index]: candidate.id }))}
               style={[
                 styles.candidateRow,
                 isSelected ? styles.candidateRowSelected : styles.candidateRowUnselected,
               ]}
             >
               <Text
-                style={[
-                  styles.candidateName,
-                  isSelected && styles.candidateNameSelected,
-                ]}
+                style={[styles.candidateName, isSelected && styles.candidateNameSelected]}
                 numberOfLines={1}
               >
                 {candidate.name}
               </Text>
-              <Text
-                style={[
-                  styles.candidateProb,
-                  isSelected && styles.candidateProbSelected,
-                ]}
-              >
+              <Text style={[styles.candidateProb, isSelected && styles.candidateProbSelected]}>
                 {Math.round(candidate.prob * 100)}%
               </Text>
             </TouchableOpacity>
-          )
+          );
         })}
         {status === 'error' && (
           <View style={styles.regionErrorRow}>
-            <Text style={styles.regionErrorText}>
-              Could not confirm this region.
-            </Text>
-            <TouchableOpacity
-              onPress={handleRetryRegion}
-              disabled={confirmingAll}
-            >
+            <Text style={styles.regionErrorText}>Could not confirm this region.</Text>
+            <TouchableOpacity onPress={handleRetryRegion} disabled={confirmingAll}>
               <Text style={styles.regionRetryLink}>Retry</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
-    )
+    );
   }
 
   function renderNutritionSection(): React.ReactNode {
@@ -639,7 +629,7 @@ export default function PhotoLogScreen() {
           <ActivityIndicator size="small" color={colors.gradientEnd} />
           <Text style={styles.nutritionLoadingText}>Loading nutrition…</Text>
         </View>
-      )
+      );
     }
     if (nutritionError) {
       return (
@@ -648,17 +638,17 @@ export default function PhotoLogScreen() {
           <Button
             title="Retry"
             onPress={() => {
-              if (screen.phase === 'result') fetchNutrition(screen.response.imageId)
+              if (screen.phase === 'result') fetchNutrition(screen.response.imageId);
             }}
             variant="ghost"
           />
         </View>
-      )
+      );
     }
-    if (!nutrition) return null
+    if (!nutrition) return null;
 
-    const items = nutrition.nutritional_info_per_item ?? []
-    const displayKcal = Math.round(adjustedKcal)
+    const items = nutrition.nutritional_info_per_item ?? [];
+    const displayKcal = Math.round(adjustedKcal);
 
     return (
       <View style={styles.nutritionCard}>
@@ -669,18 +659,20 @@ export default function PhotoLogScreen() {
           <View style={styles.itemsBlock}>
             <Text style={styles.itemsHeading}>Per-item breakdown</Text>
             {items.map((item, i) => {
-              const name = item.food_name ?? item.name ?? `Item ${i + 1}`
-              const qty = typeof item.serving_size === 'number' ? item.serving_size : null
-              const unit = item.unit ?? 'g'
-              const itemKcal = Math.round(extractKcal(item.nutritional_info))
+              const name = item.food_name ?? item.name ?? `Item ${i + 1}`;
+              const qty = typeof item.serving_size === 'number' ? item.serving_size : null;
+              const unit = item.unit ?? 'g';
+              const itemKcal = Math.round(extractKcal(item.nutritional_info));
               return (
                 <View key={i} style={styles.itemRow}>
-                  <Text style={styles.itemName} numberOfLines={1}>{name}</Text>
+                  <Text style={styles.itemName} numberOfLines={1}>
+                    {name}
+                  </Text>
                   <Text style={styles.itemMeta}>
                     {qty !== null ? `${qty} ${unit}` : '—'} · {itemKcal} kcal
                   </Text>
                 </View>
-              )
+              );
             })}
           </View>
         )}
@@ -714,13 +706,13 @@ export default function PhotoLogScreen() {
           />
         </View>
       </View>
-    )
+    );
   }
 
   function renderResultView(imageUri: string, response: SegmentationResponse): React.ReactNode {
-    const { processed_image_size, segmentation_results } = response
-    const displayHeight = getDisplayHeight(processed_image_size)
-    const hasRegions = segmentation_results.length > 0
+    const { processed_image_size, segmentation_results } = response;
+    const displayHeight = getDisplayHeight(processed_image_size);
+    const hasRegions = segmentation_results.length > 0;
 
     return (
       <ScrollView
@@ -753,7 +745,8 @@ export default function PhotoLogScreen() {
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateTitle}>No food detected</Text>
             <Text style={styles.emptyStateBody}>
-              The photo didn't contain any recognisable food regions. Try a clearer photo with the food in frame.
+              The photo didn't contain any recognisable food regions. Try a clearer photo with the
+              food in frame.
             </Text>
           </View>
         )}
@@ -788,7 +781,7 @@ export default function PhotoLogScreen() {
           />
         </View>
       </ScrollView>
-    )
+    );
   }
 
   function renderErrorView(message: string): React.ReactNode {
@@ -797,7 +790,7 @@ export default function PhotoLogScreen() {
         <ErrorMessage message={message} />
         <Button title="Try again" onPress={resetToEntry} variant="primary" />
       </View>
-    )
+    );
   }
 
   // ─── Main render ──────────────────────────────────────────────────────────
@@ -821,7 +814,7 @@ export default function PhotoLogScreen() {
         </View>
       </LinearGradient>
     </KeyboardAvoidingView>
-  )
+  );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -1114,4 +1107,4 @@ const styles = StyleSheet.create({
   startOverRow: {
     marginTop: spacing.xl,
   },
-})
+});

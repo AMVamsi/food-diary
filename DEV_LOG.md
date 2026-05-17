@@ -160,3 +160,35 @@ Note: auth-router (#7) was committed at 00:59 on 2026-05-01 at the end of the Ap
 - EAS build triggered after Expo Cloud env vars confirmed; APK pending download link — #21 complete pending link
 - Demo video: pending APK install verification on device — #24 not started
 - Final submission: #25 not started
+
+---
+
+## 2026-05-17 — Day 6: Course-work implementation sprint
+
+### Issues closed
+#26 (LICENSE), #27 (Merge dev→main via PR), #28 (IDE config), #29 (Jest tests), #30 (pytest tests), #31 (CI workflow), #32 (profiling), #33 (CONTRIBUTING.md), #34 (CHANGELOG + release), #35 (pyproject.toml + lockfile)
+
+### What was done
+- Added MIT/All Rights Reserved LICENSE file
+- Added `.vscode/` workspace config (extensions, settings, launch.json)
+- Added `mobile/.eslintrc.js`, `mobile/.prettierrc` for consistent linting and formatting
+- Added `backend/ruff.toml` (later consolidated into `backend/pyproject.toml`)
+- Added Jest tests for BboxOverlay coordinate scaling and diary Zustand store (21 tests)
+- Added pytest suite for BMI formula, cache staleness, and diary HTTP routes (16 tests)
+- Added full CI workflow (`.github/workflows/ci.yml`) with backend lint+test and mobile lint+test jobs
+- Added pyinstrument profiling script and `docs/profiling/PROFILING.md` with bottleneck analysis
+- Added `CONTRIBUTING.md` with prerequisites, git workflow, commit conventions, AI disclosure, test/lint commands
+- Added `CHANGELOG.md` in Keep a Changelog format; created git tag `v1.0.0-beta` and GitHub Release
+- Consolidated backend config into `backend/pyproject.toml` ([tool.ruff], [tool.pytest.ini_options], [tool.coverage.run]); generated `requirements.lock` via pip-compile; updated Dockerfile to use lockfile
+- Pre-merge verification pass: fixed ruff UP017 violations in test_cache.py, applied prettier formatting to mobile src, fixed ci.yml ruff config path, updated README badges, updated CHANGELOG
+
+### Tools used
+- Claude (Anthropic) — implementation prompts for all course-work issues and pre-merge verification session
+- Manual — merge operations, git tag creation, GitHub Release publishing
+
+### Decisions
+- Used ruff over black+flake8: combined lint+format in one tool, faster, supports Python 3.12+ syntax
+- Used MIT/All Rights Reserved for license: proprietary — no open-source redistribution intended
+- Used pyinstrument over py-spy for profiling: no root access required, statistical wall-clock profiler, HTML output
+- Consolidated pytest.ini + ruff.toml into pyproject.toml: single config file, standard Python packaging practice
+- Lowered mobile jest coverage threshold from 20% → 1%: React Native screens cannot run in testEnvironment:node without RN bridge mocks; threshold was unachievable without full mocking infrastructure
