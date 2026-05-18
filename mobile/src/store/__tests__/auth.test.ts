@@ -6,6 +6,9 @@
  * The store is reset between tests using setState to prevent state leakage.
  */
 
+import * as SecureStore from 'expo-secure-store';
+import { useAuthStore } from '../auth';
+
 // Covers auth.ts lines 21-25: setAuth calls SecureStore.setItemAsync
 // Covers auth.ts lines 27-30: clearAuth calls SecureStore.deleteItemAsync
 // Covers auth.ts lines 32-41: rehydrate reads SecureStore and updates state
@@ -15,9 +18,6 @@ jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn().mockResolvedValue(null),
   deleteItemAsync: jest.fn().mockResolvedValue(undefined),
 }));
-
-import * as SecureStore from 'expo-secure-store';
-import { useAuthStore } from '../auth';
 
 const TOKEN_KEY = 'auth_token';
 const USER_ID_KEY = 'auth_user_id';
@@ -91,7 +91,7 @@ describe('rehydrate', () => {
   it('restores token from SecureStore when a value is persisted', async () => {
     // Covers auth.ts lines 34-37: token read from SecureStore and set in state
     (SecureStore.getItemAsync as jest.Mock)
-      .mockResolvedValueOnce('stored-token')   // TOKEN_KEY read
+      .mockResolvedValueOnce('stored-token') // TOKEN_KEY read
       .mockResolvedValueOnce('stored-user-id'); // USER_ID_KEY read
 
     await useAuthStore.getState().rehydrate();

@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { ActivityIndicator, TouchableOpacity } from 'react-native';
 import Button from '../Button';
 
 describe('Button — primary variant rendering', () => {
@@ -38,7 +39,6 @@ describe('Button — loading state', () => {
     const { queryByText, UNSAFE_queryByType } = render(
       <Button title="Save" onPress={() => {}} loading />
     );
-    const { ActivityIndicator } = require('react-native');
     expect(queryByText('Save')).toBeNull();
     expect(UNSAFE_queryByType(ActivityIndicator)).toBeTruthy();
   });
@@ -46,10 +46,7 @@ describe('Button — loading state', () => {
   it('sets disabled={true} on the touchable when loading is true', () => {
     // Covers Button.tsx lines 23-24: isInactive = disabled || loading
     // loading=true → isInactive=true → disabled prop forwarded to TouchableOpacity
-    const { UNSAFE_getByType } = render(
-      <Button title="Save" onPress={() => {}} loading />
-    );
-    const { TouchableOpacity } = require('react-native');
+    const { UNSAFE_getByType } = render(<Button title="Save" onPress={() => {}} loading />);
     const touchable = UNSAFE_getByType(TouchableOpacity);
     expect(touchable.props.disabled).toBe(true);
   });
@@ -65,9 +62,7 @@ describe('Button — ghost variant', () => {
 
   it('renders the title text in ghost variant', () => {
     // Ghost variant also shows the title (via MaskedView + Text)
-    const { getAllByText } = render(
-      <Button title="Skip" onPress={() => {}} variant="ghost" />
-    );
+    const { getAllByText } = render(<Button title="Skip" onPress={() => {}} variant="ghost" />);
     // Ghost renders the text twice (mask element + hidden duplicate for sizing)
     const matches = getAllByText('Skip');
     expect(matches.length).toBeGreaterThanOrEqual(1);

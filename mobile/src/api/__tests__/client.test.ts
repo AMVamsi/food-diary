@@ -9,6 +9,11 @@
  * Covers client.ts lines 27-71: response interceptor (401, 429, 5xx, no-response)
  */
 
+import { client } from '../client';
+import { useAuthStore } from '../../store/auth';
+import { supabase } from '../../lib/supabase';
+import { showToast } from '../../components/Toast';
+
 jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn().mockResolvedValue(undefined),
   getItemAsync: jest.fn().mockResolvedValue(null),
@@ -27,17 +32,31 @@ jest.mock('../../components/Toast', () => ({
   showToast: jest.fn(),
 }));
 
-import { client } from '../client';
-import { useAuthStore } from '../../store/auth';
-import { supabase } from '../../lib/supabase';
-import { showToast } from '../../components/Toast';
+type RequestConfig = {
+  headers: Record<string, string | undefined>;
+  data: unknown;
+};
+
+type ResponseError = {
+  config: { _retried?: boolean; headers?: Record<string, string> };
+  response?: { status: number };
+  message?: string;
+};
 
 // Extract the interceptor handlers once after module load
-const reqHandlers = (client.interceptors.request as any).handlers;
-const requestInterceptor: (config: any) => any = reqHandlers[0].fulfilled;
+const reqHandlers = (
+  client.interceptors.request as unknown as {
+    handlers: { fulfilled: (config: RequestConfig) => RequestConfig }[];
+  }
+).handlers;
+const requestInterceptor = reqHandlers[0].fulfilled;
 
-const resHandlers = (client.interceptors.response as any).handlers;
-const responseErrorHandler: (error: any) => Promise<any> = resHandlers[0].rejected;
+const resHandlers = (
+  client.interceptors.response as unknown as {
+    handlers: { rejected: (error: ResponseError) => Promise<unknown> }[];
+  }
+).handlers;
+const responseErrorHandler = resHandlers[0].rejected;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -131,10 +150,7 @@ describe('response error interceptor — 429', () => {
     };
 
     await expect(responseErrorHandler(mockError)).rejects.toBeDefined();
-    expect(showToast).toHaveBeenCalledWith(
-      'Too many requests — please wait a moment',
-      'warning'
-    );
+    expect(showToast).toHaveBeenCalledWith('Too many requests — please wait a moment', 'warning');
   });
 });
 
@@ -148,10 +164,7 @@ describe('response error interceptor — 5xx', () => {
     };
 
     await expect(responseErrorHandler(mockError)).rejects.toBeDefined();
-    expect(showToast).toHaveBeenCalledWith(
-      'Something went wrong — please try again',
-      'error'
-    );
+    expect(showToast).toHaveBeenCalledWith('Something went wrong — please try again', 'error');
   });
 
   it('calls showToast with error when status is 503', async () => {
@@ -162,10 +175,7 @@ describe('response error interceptor — 5xx', () => {
     };
 
     await expect(responseErrorHandler(mockError)).rejects.toBeDefined();
-    expect(showToast).toHaveBeenCalledWith(
-      'Something went wrong — please try again',
-      'error'
-    );
+    expect(showToast).toHaveBeenCalledWith('Something went wrong — please try again', 'error');
   });
 });
 

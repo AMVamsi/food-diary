@@ -15,16 +15,12 @@ import Input from '../Input';
 describe('Input — label rendering', () => {
   it('renders the label text', () => {
     // Covers Input.tsx line 39: <Text style={styles.label}>{label}</Text>
-    const { getByText } = render(
-      <Input label="Email" value="" onChangeText={() => {}} />
-    );
+    const { getByText } = render(<Input label="Email" value="" onChangeText={() => {}} />);
     expect(getByText('Email')).toBeTruthy();
   });
 
   it('renders a different label string — not hardcoded', () => {
-    const { getByText } = render(
-      <Input label="Password" value="" onChangeText={() => {}} />
-    );
+    const { getByText } = render(<Input label="Password" value="" onChangeText={() => {}} />);
     expect(getByText('Password')).toBeTruthy();
   });
 });
@@ -44,12 +40,7 @@ describe('Input — text change', () => {
     // Covers Input.tsx line 49: onChangeText={onChangeText}
     const onChangeText = jest.fn();
     const { getByPlaceholderText } = render(
-      <Input
-        label="Email"
-        value=""
-        onChangeText={onChangeText}
-        placeholder="Enter email"
-      />
+      <Input label="Email" value="" onChangeText={onChangeText} placeholder="Enter email" />
     );
     fireEvent.changeText(getByPlaceholderText('Enter email'), 'hello@example.com');
     expect(onChangeText).toHaveBeenCalledWith('hello@example.com');
@@ -61,9 +52,7 @@ describe('Input — secureTextEntry', () => {
     // Covers Input.tsx line 50: secureTextEntry={secureTextEntry}
     // Native masking behaviour cannot be asserted in tests; we verify the component renders.
     expect(() => {
-      render(
-        <Input label="Password" value="" onChangeText={() => {}} secureTextEntry />
-      );
+      render(<Input label="Password" value="" onChangeText={() => {}} secureTextEntry />);
     }).not.toThrow();
   });
 });
@@ -73,9 +62,7 @@ describe('Input — hasError style switching', () => {
     // Covers Input.tsx lines 44-46: hasError → inputError style
     // Style application is not directly assertable; we verify the component renders.
     expect(() => {
-      render(
-        <Input label="Email" value="bad" onChangeText={() => {}} hasError />
-      );
+      render(<Input label="Email" value="bad" onChangeText={() => {}} hasError />);
     }).not.toThrow();
   });
 });
