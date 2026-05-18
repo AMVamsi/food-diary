@@ -42,6 +42,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: backend
           files: coverage.xml
+          fail_ci_if_error: true
 
   mobile:
     name: Mobile — lint & test
@@ -72,3 +73,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: mobile
           files: mobile/coverage/lcov.info
+          fail_ci_if_error: true
