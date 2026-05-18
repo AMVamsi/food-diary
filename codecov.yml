@@ -11,9 +11,9 @@ coverage:
 
 flags:
   backend:
-    carryforward: false
+    carryforward: true
   mobile:
-    carryforward: false
+    carryforward: true
 
 comment:
   layout: "reach,diff,flags,files"
