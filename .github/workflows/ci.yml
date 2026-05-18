@@ -49,6 +49,18 @@ jobs:
           print(f'Backend coverage: {pct:.1f}%')
           "
 
+      - name: Check Codecov token
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          if [ -z "$CODECOV_TOKEN" ]; then
+            echo "ERROR: CODECOV_TOKEN secret is not set or is empty."
+            echo "Fix: GitHub repo → Settings → Secrets and variables → Actions → New repository secret"
+            echo "Name: CODECOV_TOKEN  Value: copy from codecov.io → repo settings → Upload token"
+            exit 1
+          fi
+          echo "CODECOV_TOKEN is present (${#CODECOV_TOKEN} chars)"
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -56,7 +68,7 @@ jobs:
           flags: backend
           files: ./coverage.xml
           verbose: true
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
   mobile:
     name: Mobile — lint & test
@@ -81,12 +93,29 @@ jobs:
       - name: Jest with coverage
         run: cd mobile && npm test -- --coverage --coverageReporters=lcov
 
-      - name: Verify coverage report
+      - name: Verify and fix coverage report paths
         run: |
           if [ ! -f ./mobile/coverage/lcov.info ]; then
             echo "ERROR: mobile/coverage/lcov.info not found" && exit 1
           fi
           echo "lcov.info found ($(wc -c < ./mobile/coverage/lcov.info) bytes)"
+          # lcov.info has SF:src/... paths (relative to mobile/).
+          # Prefix with mobile/ so Codecov can match mobile/src/... in the repo.
+          sed -i 's|^SF:src/|SF:mobile/src/|g' ./mobile/coverage/lcov.info
+          echo "Sample SF paths after fix:"
+          grep "^SF:" ./mobile/coverage/lcov.info | head -5
+
+      - name: Check Codecov token
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          if [ -z "$CODECOV_TOKEN" ]; then
+            echo "ERROR: CODECOV_TOKEN secret is not set or is empty."
+            echo "Fix: GitHub repo → Settings → Secrets and variables → Actions → New repository secret"
+            echo "Name: CODECOV_TOKEN  Value: copy from codecov.io → repo settings → Upload token"
+            exit 1
+          fi
+          echo "CODECOV_TOKEN is present (${#CODECOV_TOKEN} chars)"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -95,4 +124,4 @@ jobs:
           flags: mobile
           files: ./mobile/coverage/lcov.info
           verbose: true
-          fail_ci_if_error: false
+          fail_ci_if_error: true
