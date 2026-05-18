@@ -5,7 +5,7 @@
 <!-- CI / quality -->
 [![CI](https://github.com/AMVamsi/food-diary/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AMVamsi/food-diary/actions/workflows/ci.yml)
 [![AI Usage Check](https://github.com/AMVamsi/food-diary/actions/workflows/ai-usage-check.yml/badge.svg?branch=main)](https://github.com/AMVamsi/food-diary/actions/workflows/ai-usage-check.yml)
-[![codecov](https://codecov.io/gh/AMVamsi/food-diary/graph/badge.svg?token=CODECOV_TOKEN)](https://codecov.io/gh/AMVamsi/food-diary)
+[![codecov](https://codecov.io/gh/AMVamsi/food-diary/graph/badge.svg)](https://codecov.io/gh/AMVamsi/food-diary)
 [![GitHub Release](https://img.shields.io/github/v/release/AMVamsi/food-diary?logo=github)](https://github.com/AMVamsi/food-diary/releases/latest)
 [![License](https://img.shields.io/badge/license-proprietary-red)](LICENSE)
 

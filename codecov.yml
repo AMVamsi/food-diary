@@ -11,13 +11,9 @@ coverage:
 
 flags:
   backend:
-    paths:
-      - backend/app/
-    carryforward: true
+    carryforward: false
   mobile:
-    paths:
-      - mobile/src/
-    carryforward: true
+    carryforward: false
 
 comment:
   layout: "reach,diff,flags,files"

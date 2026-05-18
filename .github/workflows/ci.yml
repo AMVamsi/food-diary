@@ -34,15 +34,16 @@ jobs:
         run: ruff format --check backend/app/ --config backend/pyproject.toml
 
       - name: pytest with coverage
-        run: pytest backend/tests/ --cov=backend/app --cov-report=xml --cov-report=term-missing
+        run: pytest backend/tests/ --cov=backend/app --cov-report=xml:coverage.xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: backend
-          files: coverage.xml
-          fail_ci_if_error: true
+          files: ./coverage.xml
+          verbose: true
+          fail_ci_if_error: false
 
   mobile:
     name: Mobile — lint & test
@@ -72,5 +73,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: mobile
-          files: mobile/coverage/lcov.info
-          fail_ci_if_error: true
+          files: ./mobile/coverage/lcov.info
+          verbose: true
+          fail_ci_if_error: false
