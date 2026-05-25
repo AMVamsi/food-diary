@@ -209,7 +209,3 @@ food-diary/
 - [Changelog](CHANGELOG.md) — release history in Keep a Changelog format
 - [AI usage disclosure](AI_USAGE.md) — full record of AI-assisted and manual changes
 - [Known limitations](LIMITATIONS.md) — free-tier constraints and deliberate design choices
-
-## 📝 License
-
-Proprietary --  All rights reserved by AMVamsi.
