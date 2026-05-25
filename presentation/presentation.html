@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Food Diary, MSLS_V5_15</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FFFFFF;
+    --text: #111827;
+    --muted: #6B7280;
+    --accent-blue: #2563EB;
+    --accent-green: #16A34A;
+    --accent-amber: #D97706;
+    --accent-red: #DC2626;
+    --card-bg: #F9FAFB;
+    --card-border: #E5E7EB;
+    --blue-light: #EFF6FF;
+    --green-light: #F0FDF4;
+    --amber-light: #FFFBEB;
+    --red-light: #FEF2F2;
+  }
+
+  .reveal {
+    font-family: system-ui, -apple-system, "Segoe UI", Helvetica, sans-serif;
+    background: #FFFFFF;
+    color: #111827;
+  }
+
+  .reveal .slides {
+    text-align: left;
+  }
+
+  .reveal .slides section {
+    width: 1280px;
+    height: 720px;
+    padding: 48px 64px 60px;
+    background: #FFFFFF;
+    top: 0 !important;
+    left: 0 !important;
+    text-align: left;
+    overflow: hidden;
+  }
+
+  .reveal h1, .reveal h2, .reveal h3, .reveal h4, .reveal h5, .reveal h6 {
+    text-transform: none;
+    font-family: system-ui, -apple-system, "Segoe UI", Helvetica, sans-serif;
+    color: #111827;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin: 0;
+    text-align: left;
+  }
+
+  .reveal p { margin: 0; }
+  .reveal ul { list-style: none; padding: 0; margin: 0; }
+  .reveal li { margin: 0; padding: 0; }
+
+  /* Label */
+  .label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #2563EB;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  /* Slide title */
+  .slide-title {
+    font-size: 56px;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  /* Card */
+  .card {
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 28px 32px;
+  }
+
+  .card-accent-top {
+    border-top: 4px solid #2563EB;
+  }
+
+  /* Stat */
+  .stat-number {
+    font-size: 88px;
+    font-weight: 900;
+    color: #2563EB;
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 17px;
+    color: #6B7280;
+    font-weight: 400;
+    display: block;
+  }
+
+  /* Pills */
+  .pill {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.3px;
+  }
+  .pill-green  { background: #16A34A; }
+  .pill-amber  { background: #D97706; }
+  .pill-blue   { background: #2563EB; }
+  .pill-red    { background: #DC2626; }
+  .pill-gray   { background: #6B7280; }
+
+  /* Divider */
+  .divider {
+    width: 56px;
+    height: 3px;
+    background: #2563EB;
+    border-radius: 2px;
+    margin: 24px 0;
+  }
+
+  /* Grid helpers */
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+
+  /* Banner */
+  .banner {
+    border-left: 4px solid #2563EB;
+    background: #EFF6FF;
+    border-radius: 0 8px 8px 0;
+    padding: 20px 24px;
+  }
+
+  /* Screenshot placeholder */
+  .screenshot-placeholder {
+    background: #F3F4F6;
+    border: 2px dashed #D1D5DB;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 18px;
+    color: #9CA3AF;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #111827;
+    border-radius: 10px;
+    padding: 24px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 17px;
+    line-height: 2.2;
+    color: #E5E7EB;
+  }
+
+  code {
+    font-family: "SF Mono", Menlo, monospace;
+    background: #F3F4F6;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.82em;
+    color: #1a1a1a;
+  }
+
+  /* Muted note */
+  .muted-note {
+    font-size: 14px;
+    font-weight: 400;
+    color: #9CA3AF;
+  }
+
+  /* Utility */
+  .mt-8  { margin-top: 8px; }
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-20 { margin-top: 20px; }
+  .mt-24 { margin-top: 24px; }
+  .mt-28 { margin-top: 28px; }
+  .mt-32 { margin-top: 32px; }
+  .mt-40 { margin-top: 40px; }
+  .mb-8  { margin-bottom: 8px; }
+  .mb-12 { margin-bottom: 12px; }
+  .mb-14 { margin-bottom: 14px; }
+  .mb-16 { margin-bottom: 16px; }
+  .mb-20 { margin-bottom: 20px; }
+  .mb-24 { margin-bottom: 24px; }
+  .mb-28 { margin-bottom: 28px; }
+  .mb-32 { margin-bottom: 32px; }
+
+  /* Override reveal default transforms */
+  .reveal .slides section.present {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .reveal .progress { display: none !important; }
+  .reveal .controls { display: none !important; }
+
+  /* Slide footer: name + page number */
+  .slide-footer-inner {
+    position: absolute;
+    bottom: 20px;
+    left: 64px;
+    right: 64px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+  }
+  .footer-name {
+    font-size: 12px;
+    color: #9CA3AF;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+  .footer-num {
+    font-size: 12px;
+    color: #9CA3AF;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1.5px;
+  }
+</style>
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+
+    <!-- SLIDE 01: TITLE -->
+    <section>
+      <img src="ZHAW_Logo.svg" alt="ZHAW" style="position:absolute; top:40px; right:64px; height: 150px; width:auto;">
+      <div style="margin-top: 30%;">
+        <span class="label">MSLS_V5_15 · Developing Software as a Product · FS26</span>
+        <h1 style="font-size:72px; font-weight:900; color:#111827; margin-top:16px; letter-spacing:-2px; line-height:1.05;">Food Diary</h1>
+        <p style="font-size:28px; font-weight:400; color:#6B7280; margin-top:12px;">AI-powered meal logging: clean code from day one</p>
+        <div class="divider" style="margin:32px 0;"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <span class="pill pill-blue">React Native</span>
+          <span class="pill pill-blue">FastAPI</span>
+          <span class="pill pill-blue">Supabase</span>
+          <span class="pill pill-blue">LogMeal AI</span>
+          <span class="pill pill-blue">Railway</span>
+        </div>
+      </div>
+      <aside class="notes">
+        Food Diary, AI-powered meal logging app. Created end-to-end as a course project: requirement analysis, design, implementation, testing, deployment, documentation.
+      </aside>
+    </section>
+
+    <!-- SLIDE 02: AI TEAMMATES -->
+    <section>
+      <span class="label">Built with AI from commit one</span>
+      <h2 class="slide-title">My AI teammates</h2>
+      <div class="divider"></div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:28px;">
+
+        <!-- Perplexity -->
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:16px; padding:40px 32px 36px; display:flex; flex-direction:column; align-items:center; text-align:center;">
+          <div style="width:108px; height:108px; border-radius:22px; background:#20808D; display:flex; align-items:center; justify-content:center; margin-bottom:22px; box-shadow:0 6px 20px rgba(32,128,141,0.28);">
+            <img src="https://cdn.simpleicons.org/perplexity/FFFFFF" style="width:60px; height:60px;" alt="Perplexity">
+          </div>
+          <div style="font-size:22px; font-weight:800; color:#111827; margin-bottom:6px;">Perplexity</div>
+          <div style="font-size:12px; font-weight:700; color:#20808D; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:20px;">The Researcher</div>
+          <div style="height:1px; background:#E5E7EB; width:100%; margin-bottom:18px;"></div>
+          <ul style="font-size:15px; color:#6B7280; line-height:2.2; text-align:left; width:100%;">
+            <li>Research</li>
+            <li>API documentation</li>
+            <li>No code generation</li>
+          </ul>
+        </div>
+
+        <!-- Claude (Anthropic) -->
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:16px; padding:40px 32px 36px; display:flex; flex-direction:column; align-items:center; text-align:center;">
+          <div style="width:108px; height:108px; border-radius:22px; background:#C96442; display:flex; align-items:center; justify-content:center; margin-bottom:22px; box-shadow:0 6px 20px rgba(201,100,66,0.28);">
+            <img src="https://cdn.simpleicons.org/anthropic/FFFFFF" style="width:60px; height:60px;" alt="Anthropic Claude">
+          </div>
+          <div style="font-size:22px; font-weight:800; color:#111827; margin-bottom:6px;">Claude</div>
+          <div style="font-size:12px; font-weight:700; color:#C96442; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:20px;">The Architect</div>
+          <div style="height:1px; background:#E5E7EB; width:100%; margin-bottom:18px;"></div>
+          <ul style="font-size:15px; color:#6B7280; line-height:2.2; text-align:left; width:100%;">
+            <li>Planning</li>
+            <li>Architecture</li>
+            <li>Issue design</li>
+          </ul>
+        </div>
+
+        <!-- GitHub Copilot -->
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:16px; padding:40px 32px 36px; display:flex; flex-direction:column; align-items:center; text-align:center;">
+          <div style="width:108px; height:108px; border-radius:22px; background:#6E40C9; display:flex; align-items:center; justify-content:center; margin-bottom:22px; box-shadow:0 6px 20px rgba(110,64,201,0.28);">
+            <img src="https://cdn.simpleicons.org/githubcopilot/FFFFFF" style="width:60px; height:60px;" alt="GitHub Copilot">
+          </div>
+          <div style="font-size:22px; font-weight:800; color:#111827; margin-bottom:6px;">GitHub Copilot</div>
+          <div style="font-size:12px; font-weight:700; color:#6E40C9; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:20px;">The Builder</div>
+          <div style="height:1px; background:#E5E7EB; width:100%; margin-bottom:18px;"></div>
+          <ul style="font-size:15px; color:#6B7280; line-height:2.2; text-align:left; width:100%;">
+            <li>Implementation</li>
+            <li>Code generation</li>
+            <li>Reviewed on every PR</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <aside class="notes">
+        Three AI tools. Each with a bounded role. Perplexity for research only, no code. Claude for planning and design. Copilot for implementation. Every use logged and verified in AI_USAGE.md.
+      </aside>
+    </section>
+
+    <!-- SLIDE 03: GOAL -->
+    <section>
+      <span class="label">What it does</span>
+      <h2 class="slide-title">Goal</h2>
+      <div class="divider"></div>
+
+      <!-- Item 1 -->
+      <div style="display:flex; align-items:center; gap:20px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:20px 28px; margin-bottom:14px;">
+        <div style="width:48px; height:48px; min-width:48px; background:#EFF6FF; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px;">📷</div>
+        <div>
+          <div style="font-size:18px; font-weight:700; color:#111827; margin-bottom:4px;">Photo logging</div>
+          <div style="font-size:16px; color:#6B7280;">Photograph food → AI identifies → calories logged automatically</div>
+        </div>
+      </div>
+
+      <!-- Item 2 -->
+      <div style="display:flex; align-items:center; gap:20px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:20px 28px; margin-bottom:14px;">
+        <div style="width:48px; height:48px; min-width:48px; background:#F0FDF4; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px;">✏️</div>
+        <div>
+          <div style="font-size:18px; font-weight:700; color:#111827; margin-bottom:4px;">Manual logging</div>
+          <div style="font-size:16px; color:#6B7280;">Search ingredients → select amounts → save to diary</div>
+        </div>
+      </div>
+
+      <!-- Item 3 -->
+      <div style="display:flex; align-items:center; gap:20px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:20px 28px;">
+        <div style="width:48px; height:48px; min-width:48px; background:#FFFBEB; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px;">📅</div>
+        <div>
+          <div style="font-size:18px; font-weight:700; color:#111827; margin-bottom:4px;">Daily diary</div>
+          <div style="font-size:16px; color:#6B7280;">Entries grouped by date with total daily calorie tracking</div>
+        </div>
+      </div>
+
+      <aside class="notes">
+        Show the app running. One tap on camera. Do not demo the full flow. 30 seconds maximum on this slide.
+      </aside>
+    </section>
+
+    <!-- SLIDE 04: THE APPROACH -->
+    <section>
+      <span class="label">Why a new project?</span>
+      <h2 class="slide-title">A different starting point</h2>
+      <div class="divider"></div>
+
+      <!-- <p style="font-size:26px; max-width:820px; color:#111827; line-height:1.7; margin-bottom:28px;">
+        "I began this course with an existing personal project. As the weeks progressed, I realised its scope was too small to meaningfully incorporate every practice being introduced. I created a new project from scratch."
+      </p> -->
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px;">
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-left:4px solid #9CA3AF; border-radius:8px; padding:28px;">
+          <div style="font-size:13px; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:16px; font-weight:600;">TYPICAL APPROACH</div>
+          <ul style="font-size:18px; color:#6B7280; line-height:2.2;">
+            <li>Existing messy project</li>
+            <li>Retrofit clean practices</li>
+            <li>Before → after story</li>
+          </ul>
+        </div>
+        <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-left:4px solid #2563EB; border-radius:8px; padding:28px;">
+          <div style="font-size:13px; color:#2563EB; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:16px; font-weight:600;">THIS PROJECT</div>
+          <ul style="font-size:18px; color:#111827; line-height:2.2;">
+            <li>Empty repository</li>
+            <li>Every practice from commit one</li>
+            <li>No before, only after</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="banner">
+        <p style="font-size:20px; color:#1D4ED8; font-style:italic; line-height:1.6;">
+          "Not how to clean up messy code, but what a product looks like when clean code is the foundation, not the renovation."
+        </p>
+      </div>
+
+      <aside class="notes">
+        Started with existing project. Scope too small for all course practices. Created new project. Applied everything from requirement analysis forward.
+      </aside>
+    </section>
+
+
+    <!-- SLIDE 05: STATE AT START -->
+    <section>
+      <span class="label">Day zero</span>
+      <h2 class="slide-title">Before writing any code</h2>
+      <div class="divider"></div>
+
+      <div class="three-col" style="margin-top:8px;">
+        <!-- Card 1 -->
+        <div class="card" style="border-top:4px solid #2563EB;">
+          <span class="label" style="color:#2563EB; margin-bottom:20px;">01 · Tech stack</span>
+          <ul style="font-size:18px; color:#111827; line-height:2.2;">
+            <li>React Native + Expo</li>
+            <li>FastAPI (async, typed)</li>
+            <li>Supabase (auth + db + storage)</li>
+            <li>Railway (deployment)</li>
+          </ul>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="card" style="border-top:4px solid #16A34A;">
+          <span class="label" style="color:#16A34A; margin-bottom:20px;">02 · Architecture</span>
+          <ul style="font-size:18px; color:#111827; line-height:2.2;">
+            <li>Proxy pattern</li>
+            <li>API key stays server-side</li>
+            <li>Mobile never calls AI directly</li>
+            <li>Clean separation of concerns</li>
+          </ul>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="card" style="border-top:4px solid #D97706;">
+          <span class="label" style="color:#D97706; margin-bottom:20px;">03 · Workflow</span>
+          <ul style="font-size:18px; color:#111827; line-height:2.2;">
+            <li>main = protected release branch</li>
+            <li>dev = integration branch</li>
+            <li>PR-only · Copilot review required</li>
+            <li>[log:slug] on every commit</li>
+          </ul>
+        </div>
+      </div>
+
+      <aside class="notes">
+        Show GitHub. Main has one commit, the scaffold. Dev has 110-plus commits. Workflow enforced from day one.
+      </aside>
+    </section>
+
+
+    <!-- SLIDE 05: ARCHITECTURE DESIGN -->
+    <section>
+      <span class="label">Architecture decision</span>
+      <h2 class="slide-title">Chosen design: secure API proxy</h2>
+      <div class="divider"></div>
+
+      <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:12px; padding:20px 22px; margin-bottom:18px;">
+        <div style="display:grid; grid-template-columns:1fr auto 1fr auto 1fr; align-items:center; gap:10px;">
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:14px 12px; text-align:center;">
+            <div style="font-size:14px; font-weight:800; color:#1D4ED8; margin-bottom:4px;">Mobile app</div>
+            <div style="font-size:13px; color:#374151;">React Native + Expo</div>
+          </div>
+          <div style="font-size:20px; font-weight:700; color:#9CA3AF;">-></div>
+          <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:14px 12px; text-align:center;">
+            <div style="font-size:14px; font-weight:800; color:#15803D; margin-bottom:4px;">Backend API</div>
+            <div style="font-size:13px; color:#374151;">FastAPI routers + middleware</div>
+          </div>
+          <div style="font-size:20px; font-weight:700; color:#9CA3AF;">-></div>
+          <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:14px 12px; text-align:center;">
+            <div style="font-size:14px; font-weight:800; color:#B45309; margin-bottom:4px;">External services</div>
+            <div style="font-size:13px; color:#374151;">LogMeal + Supabase</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px;">
+        <div class="card" style="padding:22px 24px; border-top:4px solid #2563EB;">
+          <div style="font-size:18px; font-weight:800; color:#111827; margin-bottom:10px;">Factual design choices</div>
+          <ul style="font-size:16px; color:#374151; line-height:1.8;">
+            <li>Backend exposes /auth, /diary, /profile, /logmeal routers</li>
+            <li>Mobile never calls LogMeal directly</li>
+            <li>API keys stay server-side in backend environment</li>
+            <li>Supabase handles auth, Postgres data, and image storage</li>
+          </ul>
+        </div>
+
+        <div class="card" style="padding:22px 24px; border-top:4px solid #16A34A;">
+          <div style="font-size:18px; font-weight:800; color:#111827; margin-bottom:10px;">Why this architecture</div>
+          <ul style="font-size:16px; color:#374151; line-height:1.8;">
+            <li>Security: no third-party secrets in mobile app</li>
+            <li>Control: backend can enforce validation and error mapping</li>
+            <li>Flexibility: swap LogMeal integration without app-side changes</li>
+            <li>Operations: one CI path for lint, tests, and deployment</li>
+          </ul>
+        </div>
+      </div>
+
+      <aside class="notes">
+        This architecture uses a secure proxy pattern. Mobile talks only to our backend. Backend talks to LogMeal and Supabase. Keys stay server-side, and integration changes stay isolated to backend routers.
+      </aside>
+    </section>
+
+    <!-- SLIDE 06: GIT WORKFLOW BRANCHES -->
+    <section>
+      <span class="label">Git workflow in practice</span>
+      <h2 class="slide-title">Branch strategy with PR merges</h2>
+      <div class="divider"></div>
+
+      <div style="display:grid; grid-template-columns:72% 28%; gap:18px; align-items:start;">
+        <div style="border:1px solid #E5E7EB; border-radius:12px; overflow:hidden; background:#0B1220;">
+          <img src="gitci1.png" alt="Git branch and merge graph" style="width:100%; height:510px; object-fit:cover; object-position:left top; display:block; background:#0B1220;">
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-left:4px solid #2563EB; border-radius:10px; padding:14px 16px;">
+            <div style="font-size:14px; font-weight:800; color:#1D4ED8; margin-bottom:6px;">main</div>
+            <div style="font-size:14px; color:#374151; line-height:1.5;">Protected release branch. Merge target after validation.</div>
+          </div>
+
+          <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-left:4px solid #16A34A; border-radius:10px; padding:14px 16px;">
+            <div style="font-size:14px; font-weight:800; color:#15803D; margin-bottom:6px;">dev</div>
+            <div style="font-size:14px; color:#374151; line-height:1.5;">Integration branch. Work lands here through pull requests.</div>
+          </div>
+
+          <div style="background:#FFFBEB; border:1px solid #FDE68A; border-left:4px solid #D97706; border-radius:10px; padding:14px 16px;">
+            <div style="font-size:14px; font-weight:800; color:#B45309; margin-bottom:6px;">test / review</div>
+            <div style="font-size:14px; color:#374151; line-height:1.5;">Short-lived working branches. PRs are reviewed and merged into dev, then main.</div>
+          </div>
+
+          <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:14px 16px;">
+            <div style="font-size:13px; font-weight:700; color:#111827; margin-bottom:6px;">Enforced flow</div>
+            <div style="font-size:13px; color:#4B5563; line-height:1.6;">Issue branch → PR → CI checks → review → merge</div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="notes">
+        This graph is the real repository history. main is protected. dev is integration. test and review branches are merged by PR, with CI checks and review before merge.
+      </aside>
+    </section>
+
+    <!-- SLIDE 06: FILE STRUCTURE, before and now -->
+    <section>
+      <span class="label">Project structure</span>
+      <h2 class="slide-title">From scaffold to full project</h2>
+      <div class="divider"></div>
+
+      <div style="display:grid; grid-template-columns:1fr 1.6fr; gap:28px; align-items:start;">
+
+        <!-- DAY 0 -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:12px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px;">Day 0</span>
+            <span style="font-size:11px; color:#9CA3AF; background:#F3F4F6; border:1px solid #E5E7EB; border-radius:20px; padding:2px 10px;">3 folders · 3 files</span>
+          </div>
+          <div style="background:#1E1E2E; border-radius:10px; overflow:hidden; font-family:'SF Mono',Menlo,monospace;">
+            <div style="background:#252535; padding:9px 16px; font-size:11px; font-weight:600; color:#6B7280; letter-spacing:0.5px; border-bottom:1px solid #2D2D3F;">FOOD-DIARY [GITHUB]</div>
+            <div style="padding:8px 0; font-size:13px;">
+              <div style="padding:5px 16px; color:#DCAD65;">▶&nbsp; backend</div>
+              <div style="padding:5px 16px; color:#DCAD65;">▶&nbsp; docs</div>
+              <div style="padding:5px 16px; color:#DCAD65;">▶&nbsp; mobile</div>
+              <div style="height:6px;"></div>
+              <div style="padding:5px 16px; color:#5C6370;">&nbsp;&nbsp;&nbsp; .gitignore</div>
+              <div style="padding:5px 16px; color:#C3B1E1;">&nbsp;&nbsp;&nbsp; AI_USAGE.md</div>
+              <div style="padding:5px 16px; color:#C3B1E1;">&nbsp;&nbsp;&nbsp; README.md</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOW -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:12px; font-weight:700; color:#2563EB; text-transform:uppercase; letter-spacing:1.5px;">Now</span>
+            <span style="font-size:11px; color:#2563EB; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:20px; padding:2px 10px;">7 folders · 13 files</span>
+          </div>
+          <div style="background:#1E1E2E; border-radius:10px; overflow:hidden; font-family:'SF Mono',Menlo,monospace;">
+            <div style="background:#252535; padding:9px 16px; font-size:11px; font-weight:600; color:#6B7280; letter-spacing:0.5px; border-bottom:1px solid #2D2D3F;">FOOD-DIARY [GITHUB]</div>
+            <div style="padding:6px 0; font-size:12px; display:grid; grid-template-columns:1fr 1fr;">
+              <!-- Left: folders -->
+              <div>
+                <div style="padding:4px 16px; color:#7B9EF8;">▶&nbsp; .githooks</div>
+                <div style="padding:4px 16px; color:#7B9EF8;">▶&nbsp; .github</div>
+                <div style="padding:4px 16px; color:#7B9EF8;">▶&nbsp; .vscode</div>
+                <div style="padding:4px 16px; color:#DCAD65;">▶&nbsp; backend</div>
+                <div style="padding:4px 16px; color:#7B9EF8;">▶&nbsp; demos</div>
+                <div style="padding:4px 16px; color:#DCAD65;">▶&nbsp; docs</div>
+                <div style="padding:4px 16px; color:#DCAD65;">▶&nbsp; mobile</div>
+              </div>
+              <!-- Right: files -->
+              <div>
+                <div style="padding:4px 16px; color:#5C6370;">.gitignore</div>
+                <div style="padding:4px 16px; color:#C3B1E1;">AI_USAGE.md</div>
+                <div style="padding:4px 16px; color:#86EFAC;">CHANGELOG.md</div>
+                <div style="padding:4px 16px; color:#FDA4AF;">codecov.yml</div>
+                <div style="padding:4px 16px; color:#C3B1E1;">CONTRIBUTING.md</div>
+                <div style="padding:4px 16px; color:#C3B1E1;">DEV_LOG.md</div>
+                <div style="padding:4px 16px; color:#5C6370;">LICENSE</div>
+                <div style="padding:4px 16px; color:#C3B1E1;">LIMITATIONS.md</div>
+                <div style="padding:4px 16px; color:#FCD34D;">package-lock.json</div>
+                <div style="padding:4px 16px; color:#C3B1E1;">PRODUCT.md</div>
+                <div style="padding:4px 16px; color:#C3B1E1;">PROJECT_STATE.md</div>
+                <div style="padding:4px 16px; color:#C3B1E1;">README.md</div>
+                <div style="padding:4px 16px; color:#86EFAC;">setup.sh</div>
+              </div>
+            </div>
+          </div>
+          <!-- Legend -->
+          <div style="display:flex; gap:20px; margin-top:10px; padding-left:4px;">
+            <span style="font-size:11px; color:#9CA3AF;"><span style="color:#DCAD65;">▶</span> from Day 0</span>
+            <span style="font-size:11px; color:#9CA3AF;"><span style="color:#7B9EF8;">▶</span> new folders</span>
+            <span style="font-size:11px; color:#9CA3AF;"><span style="color:#86EFAC;">●</span> scripts / changelog</span>
+            <span style="font-size:11px; color:#9CA3AF;"><span style="color:#C3B1E1;">●</span> documentation</span>
+            <span style="font-size:11px; color:#9CA3AF;"><span style="color:#FCD34D;">●</span> config / lock</span>
+          </div>
+        </div>
+
+      </div>
+
+      <aside class="notes">
+        Left: Day 0 scaffold, 3 folders, 3 files. Right: full project, 7 folders, 13 root files. New folders: .githooks (pre-commit enforcement), .github (CI workflows), .vscode (team config), demos. New files span CHANGELOG, CONTRIBUTING, LIMITATIONS, profiling docs, AI usage log, product docs.
+      </aside>
+    </section>
+
+    <!-- SLIDE 07: ENGINEERING PRACTICES GRID -->
+    <section>
+      <span class="label">What was applied</span>
+      <h2 class="slide-title">Engineering practices</h2>
+      <div class="divider"></div>
+
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-top:8px;">
+
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:16px 18px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span style="color:#16A34A; font-size:16px; font-weight:700;">✅</span>
+            <span style="font-size:16px; font-weight:700; color:#111827;">Repository hygiene</span>
+          </div>
+          <div style="font-size:13px; color:#6B7280; line-height:1.6;">README · LICENSE · Issues · branch protection</div>
+        </div>
+
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:16px 18px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span style="color:#16A34A; font-size:16px; font-weight:700;">✅</span>
+            <span style="font-size:16px; font-weight:700; color:#111827;">Git workflow</span>
+          </div>
+          <div style="font-size:13px; color:#6B7280; line-height:1.6;">main/dev branches · PR per issue · commit convention</div>
+        </div>
+
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:16px 18px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span style="color:#16A34A; font-size:16px; font-weight:700;">✅</span>
+            <span style="font-size:16px; font-weight:700; color:#111827;">Clean code</span>
+          </div>
+          <div style="font-size:13px; color:#6B7280; line-height:1.6;">Modular · type-safe · zero debug statements</div>
+        </div>
+
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:16px 18px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span style="color:#16A34A; font-size:16px; font-weight:700;">✅</span>
+            <span style="font-size:16px; font-weight:700; color:#111827;">IDE setup</span>
+          </div>
+          <div style="font-size:13px; color:#6B7280; line-height:1.6;">.vscode/ · ESLint · Prettier · Ruff · launch configs</div>
+        </div>
+
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:16px 18px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span style="color:#16A34A; font-size:16px; font-weight:700;">✅</span>
+            <span style="font-size:16px; font-weight:700; color:#111827;">Testing</span>
+          </div>
+          <div style="font-size:13px; color:#6B7280; line-height:1.6;">pytest · Jest · business logic covered</div>
+        </div>
+
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:16px 18px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span style="color:#16A34A; font-size:16px; font-weight:700;">✅</span>
+            <span style="font-size:16px; font-weight:700; color:#111827;">Profiling</span>
+          </div>
+          <div style="font-size:13px; color:#6B7280; line-height:1.6;">cProfile → flamegraph → decision documented</div>
+        </div>
+
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:16px 18px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span style="color:#16A34A; font-size:16px; font-weight:700;">✅</span>
+            <span style="font-size:16px; font-weight:700; color:#111827;">CI / CD</span>
+          </div>
+          <div style="font-size:13px; color:#6B7280; line-height:1.6;">Lint · test · coverage · deploy on every PR</div>
+        </div>
+
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:16px 18px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span style="color:#16A34A; font-size:16px; font-weight:700;">✅</span>
+            <span style="font-size:16px; font-weight:700; color:#111827;">Virtual envs</span>
+          </div>
+          <div style="font-size:13px; color:#6B7280; line-height:1.6;">Dockerfile · devcontainer · pyproject.toml · lockfile</div>
+        </div>
+
+      </div>
+
+      <aside class="notes">
+        Eight course practices. Each maps to a course week. I will walk through the ones that need explanation.
+      </aside>
+    </section>
+
+    <!-- SLIDE 08: TESTING AND COVERAGE -->
+    <section>
+      <span class="label">Testing strategy</span>
+      <h2 class="slide-title">Coverage split by code area</h2>
+      <div class="divider"></div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; margin-top:6px;">
+        <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-top:4px solid #2563EB; border-radius:12px; padding:22px 24px;">
+          <div style="font-size:14px; font-weight:700; color:#2563EB; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Backend</div>
+          <div style="font-size:62px; font-weight:900; color:#2563EB; letter-spacing:-2px; line-height:1;">40.0%</div>
+          <div style="font-size:15px; color:#374151; margin-top:10px;">209 / 523 lines covered</div>
+        </div>
+
+        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-top:4px solid #16A34A; border-radius:12px; padding:22px 24px;">
+          <div style="font-size:14px; font-weight:700; color:#16A34A; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Frontend</div>
+          <div style="font-size:62px; font-weight:900; color:#16A34A; letter-spacing:-2px; line-height:1;">7.4%</div>
+          <div style="font-size:15px; color:#374151; margin-top:10px;">59 / 798 lines covered</div>
+        </div>
+
+        <div style="background:#FFFBEB; border:1px solid #FDE68A; border-top:4px solid #D97706; border-radius:12px; padding:22px 24px;">
+          <div style="font-size:14px; font-weight:700; color:#D97706; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Whole code</div>
+          <div style="font-size:62px; font-weight:900; color:#D97706; letter-spacing:-2px; line-height:1;">20.3%</div>
+          <div style="font-size:15px; color:#374151; margin-top:10px;">268 / 1321 lines covered</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:20px;">
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:18px 20px;">
+          <div style="font-size:16px; font-weight:800; color:#111827; margin-bottom:10px;">Coverage source (local reports)</div>
+          <div style="font-size:15px; color:#374151; line-height:1.7;">
+            Backend: <strong>backend/coverage.xml</strong><br>
+            Frontend: <strong>mobile/coverage/lcov.info</strong><br>
+            Combined value is weighted by total covered lines.
+          </div>
+        </div>
+
+        <!-- <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:18px 20px;">
+          <div style="font-size:16px; font-weight:800; color:#111827; margin-bottom:10px;">Why CodeCov can show 0%</div>
+          <div style="font-size:15px; color:#374151; line-height:1.7;">
+            CodeCov status can stay at 0% if upload or mapping is not triggered. These percentages are from generated local artifacts in this repository, not from the remote badge state.
+          </div>
+        </div>
+      </div> -->
+
+      <aside class="notes">
+        Factual split from local reports: backend 40.0% (209/523), frontend 7.4% (59/798), combined 20.3% (268/1321). If CodeCov badge shows 0, explain upload or path mapping was not triggered; local coverage files still contain measured values.
+      </aside>
+    </section>
+
+    <!-- SLIDE 09: PROFILING FLAMEGRAPH, call stack breakdown -->
+    <section>
+      <span class="label">Performance profiling: POST /logmeal/segment</span>
+      <h2 class="slide-title">Call stack breakdown</h2>
+      <div class="divider"></div>
+
+      <div style="font-family:'SF Mono', Menlo, monospace; font-size:12px; margin-top:20px;">
+
+        <!-- Stack frames with proportional bars -->
+        <div style="margin-bottom:16px;">
+          <div style="display:flex; gap:12px; align-items:center; margin-bottom:6px;">
+            <div style="width:60px; text-align:right; color:#9CA3AF; font-weight:600;">100 %</div>
+            <div style="flex:1; background:#F3F4F6; height:24px; border-radius:4px; display:flex; align-items:center; padding:0 12px;">
+              <span style="color:#6B7280; font-weight:500;">app.routers.logmeal.segment</span>
+            </div>
+            <div style="width:80px; text-align:right; color:#6B7280;">3,547 ms</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px; padding-left:40px;">
+          <div style="display:flex; gap:12px; align-items:center; margin-bottom:6px;">
+            <div style="width:60px; text-align:right; color:#9CA3AF; font-weight:600;">95 %</div>
+            <div style="flex:1; background:#60A5FA; height:24px; border-radius:4px; display:flex; align-items:center; padding:0 12px;">
+              <span style="color:white; font-weight:500;">httpx.AsyncClient.send [LogMeal API call]</span>
+            </div>
+            <div style="width:80px; text-align:right; color:#6B7280;">3,375 ms</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px; padding-left:80px;">
+          <div style="display:flex; gap:12px; align-items:center; margin-bottom:6px;">
+            <div style="width:60px; text-align:right; color:#9CA3AF; font-weight:600;">87 %</div>
+            <div style="flex:1; background:#DC2626; height:28px; border-radius:4px; display:flex; align-items:center; padding:0 12px; box-shadow:0 0 0 3px rgba(220,38,38,0.1);">
+              <span style="color:white; font-weight:700; font-size:13px;">ssl.SSLSocket.read ← HOTSPOT</span>
+            </div>
+            <div style="width:80px; text-align:right; color:#DC2626; font-weight:700;">3,091 ms</div>
+          </div>
+          <div style="padding-left:12px; color:#6B7280; font-size:11px; margin-top:4px;">Network I/O wait · LogMeal ML inference time · not Python CPU</div>
+        </div>
+
+        <div style="margin-bottom:16px; padding-left:40px;">
+          <div style="display:flex; gap:12px; align-items:center; margin-bottom:6px;">
+            <div style="width:60px; text-align:right; color:#9CA3AF; font-weight:600;">8 %</div>
+            <div style="flex:1; background:#10B981; height:24px; border-radius:4px; display:flex; align-items:center; padding:0 12px;">
+              <span style="color:white; font-weight:500;">StorageFileAPI.upload [Supabase]</span>
+            </div>
+            <div style="width:80px; text-align:right; color:#6B7280;">291 ms</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:4px; padding-left:40px;">
+          <div style="display:flex; gap:12px; align-items:center;">
+            <div style="width:60px; text-align:right; color:#9CA3AF; font-weight:600;">5 %</div>
+            <div style="flex:1; background:#F59E0B; height:24px; border-radius:4px; display:flex; align-items:center; padding:0 12px;">
+              <span style="color:white; font-weight:500;">FastAPI + Python application logic</span>
+            </div>
+            <div style="width:80px; text-align:right; color:#6B7280;">165 ms</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Key finding box -->
+      <div style="background:#FEF2F2; border-left:4px solid #DC2626; border-radius:8px; padding:16px 18px; margin-top:24px;">
+        <div style="font-size:12px; color:#7F1D1D; font-weight:600; margin-bottom:6px;">Key finding</div>
+        <div style="font-size:12px; color:#6B7280; line-height:1.6;">
+          The 87% hotspot is network I/O, not Python code. The LogMeal API's food-recognition model processes the image server-side. Python execution (including Supabase upload) represents only 5% of total latency.
+        </div>
+      </div>
+
+      <aside class="notes">
+        Tool: pyinstrument 5.0.1 (statistical wall-clock profiler). Environment: FastAPI dev server, home broadband, 640×480 JPEG input. The 30-second timeout on the endpoint is appropriate given the high variance in LogMeal response times (fast: ~1 s, slow: 10–25 s under load).
+      </aside>
+    </section>
+
+    <!-- SLIDE 11: PROFILING DECISION -->
+    <section>
+      <span class="label">Profiling result</span>
+      <h2 class="slide-title">Why only LogMeal was profiled</h2>
+      <div class="divider"></div>
+
+      <!-- Time breakdown cards -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px;">
+
+        <div style="background:#FEF2F2; border-top:4px solid #DC2626; border-radius:12px; padding:24px;">
+          <div style="font-size:64px; font-weight:900; color:#DC2626; letter-spacing:-2px; line-height:1; margin-bottom:6px;">87%</div>
+          <span class="stat-label" style="font-size:15px;">LogMeal API</span>
+          <div style="font-size:12px; color:#6B7280; margin-top:6px; line-height:1.5;">ssl.SSLSocket.read<br>~3,091 ms</div>
+        </div>
+
+        <div style="background:#F0FDF4; border-top:4px solid #16A34A; border-radius:12px; padding:24px;">
+          <div style="font-size:64px; font-weight:900; color:#16A34A; letter-spacing:-2px; line-height:1; margin-bottom:6px;">8%</div>
+          <span class="stat-label" style="font-size:15px;">Supabase Storage</span>
+          <div style="font-size:12px; color:#6B7280; margin-top:6px; line-height:1.5;">non-blocking<br>~291 ms</div>
+        </div>
+
+        <div style="background:#FFFBEB; border-top:4px solid #D97706; border-radius:12px; padding:24px;">
+          <div style="font-size:64px; font-weight:900; color:#D97706; letter-spacing:-2px; line-height:1; margin-bottom:6px;">5%</div>
+          <span class="stat-label" style="font-size:15px;">Python code</span>
+          <div style="font-size:12px; color:#6B7280; margin-top:6px; line-height:1.5;">FastAPI + logic<br>~165 ms</div>
+        </div>
+
+      </div>
+
+      <!-- Rationale section -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;">
+
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:16px;">
+          <div style="font-size:12px; font-weight:700; color:#111827; margin-bottom:8px;">Why profile LogMeal?</div>
+          <div style="font-size:12px; color:#6B7280; line-height:1.6;">
+            87% of wall time blocked in ML inference on external servers. Decision: external bottleneck cannot be optimised from application code. Mitigations in place: 30s timeout, 429 proxying.
+          </div>
+        </div>
+
+        <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:16px;">
+          <div style="font-size:12px; font-weight:700; color:#111827; margin-bottom:8px;">Why not profile others?</div>
+          <div style="font-size:12px; color:#6B7280; line-height:1.6;">
+            <strong>Postgres:</strong> not a bottleneck at current data scale. <strong>Storage:</strong> non-blocking, async. <strong>Python code:</strong> 5% of total, yields ≤165 ms max, not worth optimising.
+          </div>
+        </div>
+
+      </div>
+
+      <aside class="notes">
+        Facts from profiling_report.html: LogMeal is 87%, Python is 5%, Postgres not measured but confirmed not a bottleneck at current scale. Course principle: optimise what matters. React Native frontend not profiled, would need device instrumentation. Decision is sound: external bottleneck, internal code is healthy, no mitigations needed.
+      </aside>
+    </section>
+
+    <!-- SLIDE 10: CI/CD EVIDENCE, GitHub Actions screenshots -->
+    <section>
+      <span class="label">CI/CD evidence from GitHub Actions</span>
+      <h2 class="slide-title">All required checks are green</h2>
+      <div class="divider"></div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:6px; margin-bottom:14px;">
+        <div style="border:1px solid #E5E7EB; border-radius:10px; overflow:hidden; background:#0B1220;">
+          <img src="ci1.png" alt="Push checks passed" style="width:100%; height:182px; object-fit:contain; object-position:center top; display:block; background:#0B1220;">
+          <div style="padding:10px 12px; font-size:13px; font-weight:600; color:#374151; background:#F9FAFB; line-height:1.45;">Push checks: Backend, Mobile, AI usage check, deployment</div>
+        </div>
+        <div style="border:1px solid #E5E7EB; border-radius:10px; overflow:hidden; background:#0B1220;">
+          <img src="ci2.png" alt="Pull request checks passed" style="width:100%; height:182px; object-fit:contain; object-position:center top; display:block; background:#0B1220;">
+          <div style="padding:10px 12px; font-size:13px; font-weight:600; color:#374151; background:#F9FAFB; line-height:1.45;">Pull request checks: Backend, Mobile, AI usage gate</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+        <div style="border:1px solid #E5E7EB; border-radius:10px; overflow:hidden; background:#0B1220;">
+          <img src="ci3.png" alt="Backend lint and test job details" style="width:100%; height:196px; object-fit:contain; object-position:center top; display:block; background:#0B1220;">
+          <div style="padding:10px 12px; font-size:13px; font-weight:600; color:#374151; background:#F9FAFB; line-height:1.45;">Backend job: Ruff lint, format check, pytest, CodeCov upload</div>
+        </div>
+        <div style="border:1px solid #E5E7EB; border-radius:10px; overflow:hidden; background:#0B1220;">
+          <img src="ci4.png" alt="Mobile lint and test job details" style="width:100%; height:196px; object-fit:contain; object-position:center top; display:block; background:#0B1220;">
+          <div style="padding:10px 12px; font-size:13px; font-weight:600; color:#374151; background:#F9FAFB; line-height:1.45;">Mobile job: ESLint, Prettier check, Jest with coverage, CodeCov upload</div>
+        </div>
+        <div style="border:1px solid #E5E7EB; border-radius:10px; overflow:hidden; background:#0B1220;">
+          <img src="ci5.png" alt="AI usage disclosure check details" style="width:100%; height:196px; object-fit:contain; object-position:center top; display:block; background:#0B1220;">
+          <div style="padding:10px 12px; font-size:13px; font-weight:600; color:#374151; background:#F9FAFB; line-height:1.45;">Policy job: Verify AI_USAGE.md entry exists for each commit</div>
+        </div>
+      </div>
+
+      <aside class="notes">
+        This slide shows real pipeline evidence. Top row proves all checks passed on push and on pull request. Bottom row shows each required gate: backend quality and tests, mobile quality and tests, and AI usage disclosure enforcement.
+      </aside>
+    </section>
+
+    <!-- SLIDE 12: CI/CD OVERVIEW -->
+    <section>
+      <span class="label">Continuous integration and deployment</span>
+      <h2 class="slide-title">What runs on every pull request</h2>
+      <div class="divider"></div>
+
+      <div style="display:flex; gap:10px; margin-bottom:28px; flex-wrap:wrap;">
+        <span class="pill pill-green">CI: passing</span>
+        <span class="pill pill-amber">Coverage: ~20%</span>
+        <span class="pill pill-blue">AI usage: enforced</span>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div style="font-size:18px; font-weight:700; color:#111827; margin-bottom:12px;">Standard pipeline</div>
+          <ul style="font-size:17px; color:#6B7280; line-height:2.4;">
+            <li>→ Ruff lint + format check</li>
+            <li>→ ESLint + Prettier check</li>
+            <li>→ pytest with CodeCov upload</li>
+            <li>→ Jest with CodeCov upload</li>
+            <li>→ EAS Build → Android APK</li>
+            <li>→ Railway deploy on merge to main</li>
+          </ul>
+        </div>
+
+        <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:12px; padding:28px 32px;">
+          <div style="font-size:18px; font-weight:700; color:#2563EB; margin-bottom:12px;">AI enforcement</div>
+          <ul style="font-size:17px; color:#111827; line-height:2.4;">
+            <li>→ Pre-commit hook reads message</li>
+            <li>→ Extracts [log:slug] token</li>
+            <li>→ Checks AI_USAGE.md for entry</li>
+            <li>→ Rejects commit if missing</li>
+            <li>→ GitHub Actions repeats on PR</li>
+            <li>→ PR blocked without valid entry</li>
+          </ul>
+        </div>
+      </div>
+
+      <aside class="notes">
+        Each badge is a live check. Green means it passed today. Explain each badge: CI = tests, Coverage = CodeCov, AI = enforcement.
+      </aside>
+    </section>
+
+    <!-- SLIDE 13: AI USAGE ENFORCEMENT -->
+    <section>
+      <span class="label">Non-standard contribution</span>
+      <h2 class="slide-title">AI accountability: enforced technically</h2>
+      <div class="divider"></div>
+
+      <div class="two-col" style="gap:40px;">
+        <!-- Left -->
+        <div>
+          <div style="font-size:20px; font-weight:700; margin-bottom:16px; color:#111827;">Every commit carries a log token</div>
+          <div class="code-block">
+            <div><span style="color:#86EFAC;">feat</span><span style="color:#FCA5A5;">(#13)</span> <span style="color:#FDE68A;">[log:copilot]</span><span style="color:#E5E7EB;">: photo log screen</span></div>
+            <div><span style="color:#86EFAC;">fix</span><span style="color:#FCA5A5;">(#11)</span> <span style="color:#FDE68A;">[log:manual]</span><span style="color:#E5E7EB;">: bbox scale formula</span></div>
+            <div><span style="color:#86EFAC;">docs</span><span style="color:#FCA5A5;">(#33)</span> <span style="color:#FDE68A;">[log:claude]</span><span style="color:#E5E7EB;">: CONTRIBUTING.md</span></div>
+          </div>
+          <div class="muted-note" style="margin-top:12px;">Hook rejects any commit without [log:slug]</div>
+        </div>
+
+        <!-- Right -->
+        <div>
+          <div style="font-size:20px; font-weight:700; margin-bottom:16px; color:#111827;">Three tools, three purposes</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:14px 18px;">
+              <div style="font-size:16px; font-weight:700; color:#111827; margin-bottom:4px;">Perplexity</div>
+              <div style="font-size:14px; color:#6B7280;">Research · API documentation · no code generation</div>
+            </div>
+            <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:14px 18px;">
+              <div style="font-size:16px; font-weight:700; color:#111827; margin-bottom:4px;">Claude (Anthropic)</div>
+              <div style="font-size:14px; color:#6B7280;">Planning · architecture · issue design</div>
+            </div>
+            <div style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:14px 18px;">
+              <div style="font-size:16px; font-weight:700; color:#111827; margin-bottom:4px;">GitHub Copilot</div>
+              <div style="font-size:14px; color:#6B7280;">Implementation · code generation · reviewed on every PR</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="notes">
+        Show AI_USAGE.md. Point at the verification column. Every AI-generated artefact has a documented human verification step.
+      </aside>
+    </section>
+
+    <!-- SLIDE 13: SCREENSHOT, AI_USAGE.md
+    <section>
+      <span class="label">AI_USAGE.md: full disclosure log</span>
+      <div class="screenshot-placeholder" style="width:100%; height:590px; margin-top:12px;">
+        <span>📋&nbsp; Insert: AI_USAGE.md table screenshot</span>
+        <span>Columns: Commit · Tool · Purpose · What was verified manually</span>
+      </div>
+      <aside class="notes">
+        Show the actual table. Point at the verification column. This is not checkbox compliance, it is an audit trail.
+      </aside>
+    </section> -->
+
+    <!-- SLIDE 14: STATE AT END -->
+    <section>
+      <span class="label">State at end</span>
+      <h2 class="slide-title">What was delivered</h2>
+      <div class="divider"></div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; margin-top:8px;">
+
+        <div class="card" style="border-top:4px solid #2563EB;">
+          <div style="font-size:64px; font-weight:900; color:#2563EB; letter-spacing:-2px; line-height:1; margin-bottom:8px;">34</div>
+          <span class="stat-label">issues closed</span>
+        </div>
+
+        <div class="card" style="border-top:4px solid #16A34A;">
+          <div style="font-size:64px; font-weight:900; color:#16A34A; letter-spacing:-2px; line-height:1; margin-bottom:8px;">100%</div>
+          <span class="stat-label">CI checks passing</span>
+        </div>
+
+        <div class="card" style="border-top:4px solid #D97706;">
+          <div style="font-size:64px; font-weight:900; color:#D97706; letter-spacing:-2px; line-height:1; margin-bottom:8px;">~20%</div>
+          <span class="stat-label">unit test coverage</span>
+        </div>
+
+        <div class="card" style="border-top:4px solid #2563EB;">
+          <div style="font-size:48px; font-weight:900; color:#2563EB; letter-spacing:-1px; line-height:1; margin-bottom:8px;">v1.0.0-beta</div>
+          <span class="stat-label">GitHub release + APK</span>
+        </div>
+
+      </div>
+
+      <div style="margin-top:28px; display:grid; grid-template-columns:1fr 1fr; gap:8px 48px;">
+        <div style="font-size:17px; color:#111827; line-height:1.8;">✓ Working Android APK (EAS Build)</div>
+        <div style="font-size:17px; color:#111827; line-height:1.8;">✓ README + Architecture doc</div>
+        <div style="font-size:17px; color:#111827; line-height:1.8;">✓ Deployed FastAPI backend (Railway)</div>
+        <div style="font-size:17px; color:#111827; line-height:1.8;">✓ User manual + Profiling report</div>
+        <div style="font-size:17px; color:#111827; line-height:1.8;">✓ Full CI/CD pipeline</div>
+        <div style="font-size:17px; color:#111827; line-height:1.8;">✓ CHANGELOG + CONTRIBUTING.md</div>
+        <div style="font-size:17px; color:#111827; line-height:1.8;">✓ GitHub Release with APK attached</div>
+        <div style="font-size:17px; color:#111827; line-height:1.8;">✓ All five user flows functional</div>
+      </div>
+
+      <aside class="notes">
+        Show GitHub, green badges. Show the Release page. Show APK download. All five flows work: auth, profile, photo log, manual log, diary.
+      </aside>
+    </section>
+
+    <!-- SLIDE 15: SCREENSHOT, App screens -->
+    <section>
+      <span class="label">Mobile app demo</span>
+      <h2 class="slide-title" style="font-size:44px;">Core user flows</h2>
+      <div class="divider" style="margin:16px 0 18px;"></div>
+
+      <div style="display:flex; gap:12px; justify-content:space-between; align-items:flex-start; margin-top:6px;">
+        <div style="width:176px;">
+          <div style="height:420px; border-radius:16px; overflow:hidden; border:1px solid #1F2D4A; background:#050B1A;">
+            <img src="demo1.png" alt="Login screen" style="width:100%; height:100%; object-fit:cover; object-position:center top; display:block; background:#050B1A;">
+          </div>
+          <div style="margin-top:10px; font-size:14px; font-weight:700; color:#374151; text-align:center; letter-spacing:0.2px;">Auth</div>
+        </div>
+
+        <div style="width:176px;">
+          <div style="height:420px; border-radius:16px; overflow:hidden; border:1px solid #1F2D4A; background:#050B1A;">
+            <img src="demo2.png" alt="Diary screen" style="width:100%; height:100%; object-fit:cover; object-position:center top; display:block; background:#050B1A;">
+          </div>
+          <div style="margin-top:10px; font-size:14px; font-weight:700; color:#374151; text-align:center; letter-spacing:0.2px;">Diary</div>
+        </div>
+
+        <div style="width:176px;">
+          <div style="height:420px; border-radius:16px; overflow:hidden; border:1px solid #1F2D4A; background:#050B1A;">
+            <img src="demo3.png" alt="Profile screen" style="width:100%; height:100%; object-fit:cover; object-position:center top; display:block; background:#050B1A;">
+          </div>
+          <div style="margin-top:10px; font-size:14px; font-weight:700; color:#374151; text-align:center; letter-spacing:0.2px;">Profile</div>
+        </div>
+
+        <div style="width:176px;">
+          <div style="height:420px; border-radius:16px; overflow:hidden; border:1px solid #1F2D4A; background:#050B1A;">
+            <img src="demo4.png" alt="Manual log screen" style="width:100%; height:100%; object-fit:cover; object-position:center top; display:block; background:#050B1A;">
+          </div>
+          <div style="margin-top:10px; font-size:14px; font-weight:700; color:#374151; text-align:center; letter-spacing:0.2px;">Manual log</div>
+        </div>
+
+        <div style="width:176px;">
+          <div style="height:420px; border-radius:16px; overflow:hidden; border:1px solid #1F2D4A; background:#050B1A;">
+            <img src="demo5.png" alt="Photo log screen" style="width:100%; height:100%; object-fit:cover; object-position:center top; display:block; background:#050B1A;">
+          </div>
+          <div style="margin-top:10px; font-size:14px; font-weight:700; color:#374151; text-align:center; letter-spacing:0.2px;">Photo log</div>
+        </div>
+
+        <div style="width:176px;">
+          <div style="height:420px; border-radius:16px; overflow:hidden; border:1px solid #1F2D4A; background:#050B1A;">
+            <img src="demo6.png" alt="Photo segmentation result" style="width:100%; height:100%; object-fit:cover; object-position:center top; display:block; background:#050B1A;">
+          </div>
+          <div style="margin-top:10px; font-size:14px; font-weight:700; color:#374151; text-align:center; letter-spacing:0.2px;">AI segmentation</div>
+        </div>
+      </div>
+      <aside class="notes">
+        Clean end-to-end flow in one frame: auth, diary, profile, manual log, photo log, and AI segmentation output.
+      </aside>
+    </section>
+
+    <!-- SLIDE 16: WHAT I WOULD DO DIFFERENTLY
+    <section>
+      <span class="label">Reflection</span>
+      <h2 class="slide-title">Three engineering judgements</h2>
+      <div class="divider"></div>
+
+      <div style="display:flex; flex-direction:column; gap:16px; margin-top:8px;">
+
+        <div style="border-left:4px solid #DC2626; background:#FEF2F2; border-radius:0 8px 8px 0; padding:22px 28px;">
+          <div style="font-size:19px; font-weight:700; color:#111827; margin-bottom:8px;">Tests followed the code, not the other way around</div>
+          <div style="font-size:17px; color:#374151; line-height:1.7;">All ~20% coverage comes from pure logic functions: BMI calculation, cache TTL, bbox scaling. Endpoint handlers were built before any test existed. Writing tests first would have surfaced design trade-offs at the interface level, not after the fact.</div>
+        </div>
+
+        <div style="border-left:4px solid #D97706; background:#FFFBEB; border-radius:0 8px 8px 0; padding:22px 28px;">
+          <div style="font-size:19px; font-weight:700; color:#111827; margin-bottom:8px;">Cold-start was estimated, not measured</div>
+          <div style="font-size:17px; color:#374151; line-height:1.7;">LIMITATIONS.md states "2 to 5 seconds on first request." That figure is observation, not data. The cProfile session covered only the warm path (POST /logmeal/segment). The cold-start path was never instrumented, so the number has no profiling evidence behind it.</div>
+        </div>
+
+        <div style="border-left:4px solid #9CA3AF; background:#F9FAFB; border-radius:0 8px 8px 0; padding:22px 28px;">
+          <div style="font-size:19px; font-weight:700; color:#111827; margin-bottom:8px;">Debug commits are permanent in the dev branch history</div>
+          <div style="font-size:17px; color:#374151; line-height:1.7;">Two debug-style commits were merged and remain in dev. The pre-commit hook validates the [log:slug] token but does not enforce clean commit structure. Squashing those commits before merge was the right action and was not taken.</div>
+        </div>
+
+      </div>
+
+      <aside class="notes">
+        Three factual observations. Not apologies. ~20% coverage is the real outcome of building before testing. Cold-start figure is estimated. Two debug commits exist in dev history. These are the gaps.
+      </aside>
+    </section> -->
+
+    <!-- SLIDE 17: QUESTIONS -->
+    <section>
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center;">
+        <div style="font-size:60px; font-weight:900; color:#111827; margin-bottom:16px; letter-spacing:-2px;">Questions</div>
+        <div style="font-size:24px; font-weight:400; color:#6B7280; margin-bottom:48px;">Architecture · Codebase · Profiling · AI usage · CI/CD</div>
+        <div style="height:1px; background:#E5E7EB; width:50%; margin-bottom:40px;"></div>
+        <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+          <span class="pill pill-blue">GitHub repo</span>
+          <span class="pill pill-gray">CodeCov</span>
+          <span class="pill pill-gray">Architecture doc</span>
+          <span class="pill pill-gray">Flamegraph SVG</span>
+        </div>
+      </div>
+      <aside class="notes">
+        Have open: GitHub repo, CodeCov, Railway (for reference), flamegraph SVG, app on phone. Be ready to open any file in the codebase.
+      </aside>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    width: 1280,
+    height: 720,
+    margin: 0,
+    hash: true,
+    controls: false,
+    progress: false,
+    center: false,
+    transition: 'none',
+    backgroundTransition: 'none',
+    slideNumber: false,
+    keyboard: {
+      32: 'next',
+      39: 'next',
+      37: 'prev',
+      38: 'prev',
+      40: 'next'
+    }
+  });
+
+  // Inject footer (name + slide number) into every slide
+  (function () {
+    var sections = document.querySelectorAll('.reveal .slides > section');
+    var total = sections.length;
+    sections.forEach(function (section, i) {
+      var footer = document.createElement('div');
+      footer.className = 'slide-footer-inner';
+      footer.innerHTML =
+        '<span class="footer-name">Mohan Adluru</span>' +
+        '<span class="footer-num">' + String(i + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0') + '</span>';
+      section.appendChild(footer);
+    });
+  })();
+</script>
+</body>
+</html>
